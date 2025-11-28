@@ -1,0 +1,209 @@
+"use client";
+
+import Breadcrumb from "@/components/ui/breadcrumb";
+import InputGroup from "@/components/form-elements/InputGroup";
+import { Select } from "@/components/form-elements/select";
+import api from "@/services/api";
+import { Brand, Category } from "@/types/backend";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
+
+const productSchema = z.object({
+  name: z.string().min(3, "Product name must be at least 3 characters long"),
+  price: z.preprocess(
+    (a) => parseFloat(z.string().parse(a)),
+    z.number().positive("Price must be a positive number")
+  ),
+  description: z.string().min(10, "Description must be at least 10 characters long"),
+  categoryId: z.string().min(1, "Category is required"),
+  brandId: z.string().min(1, "Brand is required"),
+  imageUrl: z.string().url("Image URL must be a valid URL"),
+});
+
+type ProductFormData = z.infer<typeof productSchema>;
+
+export default function AddProductPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: "",
+      price: 0,
+      description: "",
+      categoryId: "",
+      brandId: "",
+      imageUrl: "",
+    },
+  });
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [catRes, brandRes] = await Promise.all([
+          api.get("/categories"),
+          api.get("/brands"),
+        ]);
+        
+        // Handle varied response structures (array vs { data: array })
+        const cats = Array.isArray(catRes.data) ? catRes.data : catRes.data.data || [];
+        const brs = Array.isArray(brandRes.data) ? brandRes.data : brandRes.data.data || [];
+
+        setCategories(cats);
+        setBrands(brs);
+      } catch (error) {
+        console.error("Error fetching form options", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSubmitForm = async (data: ProductFormData) => {
+    setLoading(true);
+
+    try {
+      const payload = {
+        ...data,
+        images: [data.imageUrl], // Backend expects array of strings
+      };
+
+      await api.post("/products", payload);
+      toast.success("Product created successfully!");
+      router.push("/products");
+    } catch (error) {
+      console.error("Failed to create product", error);
+      toast.error("Failed to create product. Please check inputs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <Breadcrumb pageName="Add Product" />
+
+      <div className="grid grid-cols-1 gap-9 sm:grid-cols-2">
+        <div className="flex flex-col gap-9">
+          <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+            <div className="border-b border-stroke px-6.5 py-4 dark:border-dark-3">
+              <h3 className="font-semibold text-dark dark:text-white">
+                Product Details
+              </h3>
+            </div>
+            <form onSubmit={handleSubmit(handleSubmitForm)}>
+              <div className="p-6.5">
+                <InputGroup
+                  label="Product Name"
+                  type="text"
+                  placeholder="Enter product name"
+                  required
+                  className="mb-4.5"
+                  {...register("name")}
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.name.message}
+                  </p>
+                )}
+
+                <InputGroup
+                  label="Price"
+                  type="number"
+                  placeholder="Enter price"
+                  required
+                  className="mb-4.5"
+                  {...register("price", { valueAsNumber: true })}
+                />
+                {errors.price && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.price.message}
+                  </p>
+                )}
+
+                <div className="mb-4.5">
+                   <label className="mb-2.5 block text-black dark:text-white">
+                     Description
+                   </label>
+                   <textarea
+                     rows={6}
+                     placeholder="Enter product description"
+                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                     {...register("description")}
+                   ></textarea>
+                   {errors.description && (
+                     <p className="text-red-500 text-sm mt-1">
+                       {errors.description.message}
+                     </p>
+                   )}
+                </div>
+
+                <Select
+                  label="Category"
+                  placeholder="Select Category"
+                  items={categories.map((c) => ({ value: c.id, label: c.name }))}
+                  className="mb-4.5"
+                  value={watch("categoryId")}
+                  onChange={(e) => setValue("categoryId", e.target.value)}
+                />
+                {errors.categoryId && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.categoryId.message}
+                  </p>
+                )}
+
+                <Select
+                  label="Brand"
+                  placeholder="Select Brand"
+                  items={brands.map((b) => ({ value: b.id, label: b.name }))}
+                  className="mb-4.5"
+                  value={watch("brandId")}
+                  onChange={(e) => setValue("brandId", e.target.value)}
+                />
+                {errors.brandId && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.brandId.message}
+                  </p>
+                )}
+                
+                 <InputGroup
+                  label="Image URL"
+                  type="text"
+                  placeholder="Enter image URL"
+                  className="mb-6"
+                  {...register("imageUrl")}
+                />
+                {errors.imageUrl && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.imageUrl.message}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90 disabled:opacity-50"
+                >
+                  {loading ? "Creating..." : "Create Product"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
