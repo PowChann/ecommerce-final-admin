@@ -4,6 +4,10 @@ import Link from "next/link";
 import React, { useState } from "react";
 import InputGroup from "../form-elements/InputGroup";
 import { Checkbox } from "../form-elements/checkbox";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SigninWithPassword() {
   const [data, setData] = useState({
@@ -13,6 +17,8 @@ export default function SigninWithPassword() {
   });
 
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { login } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setData({
@@ -21,15 +27,30 @@ export default function SigninWithPassword() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // You can remove this code block
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await axios.post("/api/auth/login", {
+        email: data.email,
+        password: data.password,
+      }, {
+        withCredentials: true,
+      });
+
+      if (response.status === 200 && response.data.data.user) {
+        login(response.data.data.user); // Cập nhật trạng thái người dùng vào AuthContext
+        toast.success("Login successful!");
+        router.push("/");
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Login failed. Please try again.";
+      toast.error(errorMessage);
+      console.error("Login error:", error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (

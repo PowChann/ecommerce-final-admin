@@ -7,18 +7,47 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
+import { useAuth } from "@/context/AuthContext";
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const { logout, user, isAuthenticated } = useAuth();
 
-  const USER = {
-    name: "John Smith",
-    email: "johnson@nextadmin.com",
-    img: "https://ui-avatars.com/api/?name=John+Smith&background=random",
+  // Placeholder user info if not authenticated
+  const DEFAULT_USER = {
+    name: "Guest User",
+    email: "guest@example.com",
+    img: "https://ui-avatars.com/api/?name=Guest+User&background=random",
+  };
+
+  const currentUser = isAuthenticated && user ? user : DEFAULT_USER;
+
+  const handleLogout = async () => {
+    setIsOpen(false); // Close dropdown before logout
+
+    try {
+      const response = await axios.post("/api/auth/logout", {}, {
+        withCredentials: true,
+      });
+
+      if (response.status === 200) {
+        logout(); // Cập nhật trạng thái người dùng trong AuthContext
+        toast.success("Logged out successfully!");
+        router.push("/auth/sign-in"); // Chuyển hướng đến trang đăng nhập
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to log out. Please try again.";
+      toast.error(errorMessage);
+      console.error("Logout error:", error);
+    }
   };
 
   return (
@@ -28,15 +57,15 @@ export function UserInfo() {
 
         <figure className="flex items-center gap-3">
           <Image
-            src={USER.img}
+            src={currentUser.img || null} // Truyền null nếu currentUser.img là chuỗi rỗng
             className="size-12 rounded-full"
-            alt={`Avatar of ${USER.name}`}
+            alt={`Avatar of ${currentUser.name}`}
             role="presentation"
             width={200}
             height={200}
           />
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
-            <span>{USER.name}</span>
+            <span>{currentUser.name}</span>
 
             <ChevronUpIcon
               aria-hidden
@@ -58,9 +87,9 @@ export function UserInfo() {
 
         <figure className="flex items-center gap-2.5 px-5 py-3.5">
           <Image
-            src={USER.img}
+            src={currentUser.img || null}
             className="size-12 rounded-full"
-            alt={`Avatar for ${USER.name}`}
+            alt={`Avatar for ${currentUser.name}`}
             role="presentation"
             width={200}
             height={200}
@@ -68,10 +97,10 @@ export function UserInfo() {
 
           <figcaption className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
-              {USER.name}
+              {currentUser.name}
             </div>
 
-            <div className="leading-none text-gray-6">{USER.email}</div>
+            <div className="leading-none text-gray-6">{currentUser.email}</div>
           </figcaption>
         </figure>
 
@@ -106,7 +135,7 @@ export function UserInfo() {
         <div className="p-2 text-base text-[#4B5563] dark:text-dark-6">
           <button
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-            onClick={() => setIsOpen(false)}
+            onClick={handleLogout}
           >
             <LogOutIcon />
 
@@ -117,4 +146,3 @@ export function UserInfo() {
     </Dropdown>
   );
 }
-

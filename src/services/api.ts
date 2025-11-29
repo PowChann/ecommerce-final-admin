@@ -8,7 +8,10 @@ import {
   MOCK_TAGS, 
   MOCK_DISCOUNTS, 
   MOCK_STATS, 
-  MOCK_CHART_DATA 
+  MOCK_CHART_DATA,
+  MOCK_PRODUCT_DETAILS, // Import detailed product mock
+  MOCK_PRODUCT_VARIANTS, // Import product variants mock
+  MOCK_ORDER_DETAILS // Import detailed order mock
 } from '@/services/mock-data';
 
 // Use environment variable or default to localhost for development
@@ -34,6 +37,31 @@ api.interceptors.response.use(
         let mockData = null;
         let meta = { totalPages: 1, total: 10, page: 1, limit: 10 }; // Default meta
 
+        // Handle specific detailed GET requests
+        if (url.match(/\/products\/(p1|p2|p3|p4|p5)$/)) { // Match any product ID in MOCK_PRODUCTS
+            const productId = url.split('/').pop();
+            const product = MOCK_PRODUCTS.find(p => p.id === productId);
+            if (product) {
+                return Promise.resolve({ data: { data: product } });
+            }
+        }
+        if (url.match(/\/product-variants\/(p1|p2|p3|p4|p5)$/)) { // Match /product-variants/:productId for products in MOCK_PRODUCTS
+            const productId = url.split('/').pop();
+            const variants = MOCK_PRODUCT_VARIANTS.filter(v => v.productId === productId);
+            if (variants.length > 0) {
+                return Promise.resolve({ data: { data: variants } });
+            }
+        }
+        if (url.match(/\/orders\/(o1|o2|o3)$/)) { // Match any order ID in MOCK_ORDERS
+            const orderId = url.split('/').pop();
+            const order = MOCK_ORDERS.find(o => o.id === orderId);
+            if (order) {
+                return Promise.resolve({ data: { data: order } });
+            }
+        }
+        // ... add similar logic for other detailed GET endpoints if needed
+
+        // Existing list mocks
         if (url.includes('/users')) mockData = MOCK_USERS;
         else if (url.includes('/products')) mockData = MOCK_PRODUCTS;
         else if (url.includes('/orders')) mockData = MOCK_ORDERS;
@@ -45,10 +73,11 @@ api.interceptors.response.use(
         else if (url.includes('/chart')) return Promise.resolve({ data: MOCK_CHART_DATA });
 
         if (mockData) {
+            // Simulate pagination for list endpoints if needed
             return Promise.resolve({
                 data: {
                     data: mockData,
-                    meta: meta
+                    meta: meta // You might want to calculate totalPages/total based on mockData.length
                 }
             });
         }

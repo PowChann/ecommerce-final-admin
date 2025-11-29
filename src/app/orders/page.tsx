@@ -15,6 +15,7 @@ import { Order } from "@/types/backend";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast"; // Import toast
 
 // Placeholder Icon
 const EyeIcon = () => (
@@ -37,49 +38,51 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get("/orders/admin/all", {
-          params: {
-            page,
-            limit: 10,
-            sort: "createdAt",
-            order: "desc", // Assuming your API supports sort order param
-          },
-        });
-        
-        if (response.data && Array.isArray(response.data.data)) {
-           setOrders(response.data.data);
-           setTotalPages(response.data.meta?.totalPages || 1);
-        } else if (Array.isArray(response.data)) {
-           setOrders(response.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch orders", error);
-      } finally {
-        setLoading(false);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/orders/admin/all", {
+        params: {
+          page,
+          limit: 10,
+          sort: "createdAt",
+          order: "desc", // Assuming your API supports sort order param
+        },
+      });
+      
+      if (response.data && Array.isArray(response.data.data)) {
+         setOrders(response.data.data);
+         setTotalPages(response.data.pagination?.totalPages || 1);
+      } else {
+         setOrders([]);
+         setTotalPages(1);
+         toast.error("Invalid API response format for orders.");
       }
-    };
+    } catch (error: any) {
+      console.error("Failed to fetch orders", error);
+      toast.error(error.response?.data?.message || "Failed to fetch orders.");
+      setOrders([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
   }, [page]);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    /*
-    // TEMPORARILY DISABLED
-    if (!confirm(`Change status to ${newStatus}?`)) return;
+    if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
     try {
-      await api.put(`/orders/admin/${id}`, { status: newStatus });
-      // Optimistic update or refetch
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
-      alert("Order status updated");
-    } catch (error) {
+      const response = await api.put(`/orders/admin/${id}`, { status: newStatus });
+      toast.success("Order status updated successfully!");
+      // Optimistic update
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as any, statusHistory: response.data.data.statusHistory } : o));
+    } catch (error: any) {
       console.error("Failed to update status", error);
-      alert("Failed to update status");
+      toast.error(error.response?.data?.message || "Failed to update status.");
     }
-    */
-    alert("Chức năng cập nhật trạng thái đơn hàng đang tạm khóa.");
   };
 
   return (
@@ -115,7 +118,7 @@ export default function OrdersPage() {
                         #{order.id.slice(0, 8)}
                     </TableCell>
                     <TableCell>
-                        {order.user?.name || order.userId.slice(0, 8)}
+                        {order.user?.email || order.user?.name || order.userId.slice(0, 8)}
                     </TableCell>
                     <TableCell>
                         {dayjs(order.createdAt).format("MMM DD, YYYY")}

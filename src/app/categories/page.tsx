@@ -13,21 +13,44 @@ import {
 import api from "@/services/api";
 import { Category } from "@/types/backend";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
+
+const categorySchema = z.object({
+  name: z.string().min(3, "Category name must be at least 3 characters long"),
+});
+
+type CategoryFormData = z.infer<typeof categorySchema>;
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: "" });
   
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm<CategoryFormData>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
   const fetchCategories = async () => {
     setLoading(true);
     try {
       const response = await api.get("/categories");
       const data = Array.isArray(response.data) ? response.data : response.data.data || [];
       setCategories(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch categories", error);
+      toast.error(error.response?.data?.message || "Failed to fetch categories.");
     } finally {
       setLoading(false);
     }
@@ -37,51 +60,44 @@ export default function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    /*
-    // TEMPORARILY DISABLED
+  const onSubmit = async (data: CategoryFormData) => {
     try {
       if (editingId) {
-        await api.put(`/categories/${editingId}`, formData);
-        setEditingId(null);
+        await api.put(`/categories/${editingId}`, data);
+        toast.success("Category updated successfully!");
       } else {
-        await api.post("/categories", formData);
+        await api.post("/categories", data);
+        toast.success("Category created successfully!");
       }
-      setFormData({ name: "" });
-      fetchCategories();
-    } catch (error) {
+      setEditingId(null);
+      reset({ name: "" }); // Clear form
+      fetchCategories(); // Refresh list
+    } catch (error: any) {
       console.error("Failed to save category", error);
-      alert("Failed to save category");
+      toast.error(error.response?.data?.message || "Failed to save category.");
     }
-    */
-    alert("Chức năng thêm/sửa danh mục đang tạm khóa.");
   };
 
   const handleEdit = (category: Category) => {
-    // setEditingId(category.id);
-    // setFormData({ name: category.name });
-    alert("Chức năng chỉnh sửa đang tạm khóa.");
+    setEditingId(category.id);
+    setValue("name", category.name);
   };
 
   const handleDelete = async (id: string) => {
-    /*
-    // TEMPORARILY DISABLED
-    if (!confirm("Delete this category?")) return;
+    if (!confirm("Are you sure you want to delete this category?")) return;
     try {
       await api.delete(`/categories/${id}`);
-      setCategories(prev => prev.filter(c => c.id !== id));
-    } catch (error) {
+      toast.success("Category deleted successfully!");
+      fetchCategories(); // Refresh list
+    } catch (error: any) {
       console.error("Failed to delete category", error);
-      alert("Failed to delete category");
+      toast.error(error.response?.data?.message || "Failed to delete category.");
     }
-    */
-    alert("Chức năng xóa đang tạm khóa.");
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setFormData({ name: "" });
+    reset({ name: "" }); // Clear form
   };
 
   return (
@@ -97,17 +113,21 @@ export default function CategoriesPage() {
                 {editingId ? "Edit Category" : "Add New Category"}
               </h3>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="p-6.5">
                 <InputGroup
                   label="Category Name"
                   type="text"
                   placeholder="Enter category name"
-                  value={formData.name}
-                  handleChange={(e) => setFormData({ name: e.target.value })}
+                  {...register("name")}
                   required
                   className="mb-4.5"
                 />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.name.message}
+                  </p>
+                )}
                 <div className="flex gap-3">
                     <button
                     type="submit"

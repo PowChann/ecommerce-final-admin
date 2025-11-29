@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/table";
 import api from "@/services/api";
 import { Product } from "@/types/backend";
-import { TrashIcon } from "@/assets/icons"; // Assuming PencilIcon exists or I'll substitute
+import { TrashIcon } from "@/assets/icons";
+import toast from "react-hot-toast"; // Import toast
 
 // Placeholder icon if Pencil doesn't exist in assets
 const EditIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-     <path d="M13.75 3.01L14.99 4.25L4.49 14.75H3.25V13.51L13.75 3.01ZM13.75 0.5C13.41 0.5 13.07 0.63 12.81 0.89L11.37 2.33L15.66 6.62L17.1 5.18C17.63 4.65 17.63 3.8 17.1 3.27L14.72 0.89C14.46 0.63 14.12 0.5 13.75 0.5ZM10.66 3.04L2 11.7V16H6.3L14.96 7.34L10.66 3.04Z" />
+     <path d="M13.75 3.01L14.99 4.25L4.49 14.75H3.25V13.51L13.75 3.01ZM13.75 0.5C13.41 0.5 13.07 0.63 12.81 0.89L11.37 2.33L15.66 6.62L17.10 5.18C17.63 4.65 17.63 3.8 17.10 3.27L14.72 0.89C14.46 0.63 14.12 0.5 13.75 0.5ZM10.66 3.04L2 11.7V16H6.3L14.96 7.34L10.66 3.04Z" />
   </svg>
 );
 
@@ -35,48 +36,49 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-    useEffect(() => {
-      const fetchProducts = async () => {
-        setLoading(true);
-        try {
-          const response = await api.get("/products", {
-            params: {
-              page,
-              limit: 10,
-              sortBy: "createdAt",
-              order: "desc",
-            },
-          });
-          // Adjust structure based on actual API response
-          // Assuming { data: Product[], meta: { totalPages: number } }
-          // If backend just returns array, handle that.
-          // Based on "Pagination supported" in requirements:
-          if (response.data && Array.isArray(response.data.data)) {
-             setProducts(response.data.data);
-             setTotalPages(response.data.meta?.totalPages || 1);
-          } else if (Array.isArray(response.data)) {
-             setProducts(response.data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch products", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchProducts();
-    }, [page]);
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/products", {
+        params: {
+          page,
+          limit: 10,
+          sortBy: "createdAt",
+          order: "desc",
+        },
+      });
+      if (response.data && Array.isArray(response.data.data)) {
+        setProducts(response.data.data);
+        setTotalPages(response.data.pagination?.totalPages || 1);
+      } else {
+        setProducts([]);
+        setTotalPages(1);
+        toast.error("Invalid API response format for products.");
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch products", error);
+      toast.error(error.response?.data?.message || "Failed to fetch products.");
+      setProducts([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [page]);
+
   const handleDelete = async (id: string) => {
-    /*
-    // TEMPORARILY DISABLED
     if (!confirm("Are you sure you want to delete this product?")) return;
     try {
       await api.delete(`/products/${id}`);
-      fetchProducts(); // Refresh
-    } catch (error) {
-      alert("Failed to delete product");
+      toast.success("Product deleted successfully!");
+      fetchProducts(); // Refresh the list
+    } catch (error: any) {
+      console.error("Failed to delete product", error);
+      toast.error(error.response?.data?.message || "Failed to delete product.");
     }
-    */
-    alert("Chức năng xóa sản phẩm đang tạm khóa.");
   };
 
   return (
