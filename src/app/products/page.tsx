@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image"; // Add Image import
 import Breadcrumb from "@/components/ui/breadcrumb";
 import {
   Table,
@@ -98,6 +99,7 @@ export default function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
+                <TableHead>Image</TableHead>
                 <TableHead>Product Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Price</TableHead>
@@ -108,15 +110,30 @@ export default function ProductsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="text-center py-10">Loading...</TableCell>
+                   <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
                 </TableRow>
               ) : products.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="text-center py-10">No Products Found</TableCell>
+                   <TableCell colSpan={6} className="text-center py-10">No Products Found</TableCell>
                 </TableRow>
               ) : (
                 products.map((product) => (
                   <TableRow key={product.id} className="border-[#eee] dark:border-dark-3">
+                    <TableCell className="min-w-[80px]">
+                      {product.images && product.images.length > 0 ? (
+                        <Image
+                          src={product.images[0]}
+                          alt={product.name}
+                          width={48}
+                          height={48}
+                          className="rounded object-cover"
+                        />
+                      ) : (
+                        <div className="size-12 rounded bg-gray-200 flex items-center justify-center">
+                          <span className="text-xs text-gray-500">No Img</span>
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="min-w-[150px]">
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col">

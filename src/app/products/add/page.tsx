@@ -22,7 +22,7 @@ const productSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters long"),
   categoryId: z.string().min(1, "Category is required"),
   brandId: z.string().min(1, "Brand is required"),
-  imageUrl: z.string().url("Image URL must be a valid URL").or(z.literal("")),
+  imageUrl: z.string().url("Image URL must be a valid URL").min(1, "Product image is required"),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -97,8 +97,8 @@ export default function AddProductPage() {
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
       <Breadcrumb pageName="Add Product" />
 
-      <div className="grid grid-cols-1 gap-9 sm:grid-cols-2">
-        <div className="flex flex-col gap-9">
+      <div className="grid grid-cols-1 gap-9">
+        <div className="flex flex-col gap-9 col-span-full">
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
             <div className="border-b border-stroke px-6.5 py-4 dark:border-dark-3">
               <h3 className="font-semibold text-dark dark:text-white">

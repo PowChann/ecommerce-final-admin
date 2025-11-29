@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
+import { useClickOutside } from "@/hooks/use-click-outside";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +31,7 @@ const variantSchema = z.object({
     (a) => parseInt(z.string().parse(a), 10),
     z.number().int().min(0, "Quantity cannot be negative")
   ),
-  image: z.string().url("Image URL must be a valid URL").optional().or(z.literal("")),
+  image: z.string().url("Image URL must be a valid URL").min(1, "Variant image is required"),
   attributes: z.string().refine((val) => {
     try {
       JSON.parse(val);
@@ -37,7 +39,7 @@ const variantSchema = z.object({
     } catch (e) {
       return false;
     }
-  }, "Attributes must be a valid JSON string"),
+  }, "Attributes must be a valid JSON string. Example: {\"color\": \"Red\", \"size\": \"M\"}"),
 });
 
 type VariantFormData = z.infer<typeof variantSchema>;
@@ -50,6 +52,8 @@ export function VariantFormModal({
   onSave,
 }: VariantFormModalProps) {
   const [loading, setLoading] = useState(false);
+  const modalRef = useClickOutside<HTMLDivElement>(onClose);
+  const [attributeList, setAttributeList] = useState<{ key: string; value: string }[]>([]);
 
   const {
     register,
@@ -57,7 +61,7 @@ export function VariantFormModal({
     formState: { errors },
     reset,
     setValue,
-    watch, // Thêm watch vào đây
+    watch,
   } = useForm<VariantFormData>({
     resolver: zodResolver(variantSchema),
     defaultValues: {
@@ -65,7 +69,7 @@ export function VariantFormModal({
       price: 0,
       quantity: 0,
       image: "",
-      attributes: "{}", // Default to empty JSON object string
+      // attributes will be managed separately
     },
   });
 
@@ -77,16 +81,22 @@ export function VariantFormModal({
           price: editingVariant.price,
           quantity: editingVariant.quantity,
           image: editingVariant.image || "",
-          attributes: JSON.stringify(editingVariant.attributes, null, 2), // Pretty print JSON
+          // attributes are managed by attributeList state
         });
+        const attributesArray = Object.entries(editingVariant.attributes || {}).map(([key, value]) => ({
+          key,
+          value: String(value), // Ensure value is string for input
+        }));
+        setAttributeList(attributesArray);
       } else {
         reset({
             sku: "",
             price: 0,
             quantity: 0,
             image: "",
-            attributes: "{}",
+            // attributes are managed by attributeList state
         });
+        setAttributeList([]);
       }
     }
   }, [isOpen, editingVariant, reset]);
@@ -94,10 +104,21 @@ export function VariantFormModal({
   const onSubmit = async (data: VariantFormData) => {
     setLoading(true);
     try {
+      // Construct attributes object from attributeList
+      const attributesObject = attributeList.reduce((acc, attr) => {
+        if (attr.key.trim() !== "") {
+          acc[attr.key.trim()] = attr.value.trim();
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
       const payload = {
         productId,
-        ...data,
-        attributes: JSON.parse(data.attributes), // Parse JSON string back to object
+        sku: data.sku,
+        price: data.price,
+        quantity: data.quantity,
+        image: data.image,
+        attributes: attributesObject, // Use the constructed object
       };
 
       if (editingVariant) {
@@ -122,9 +143,12 @@ export function VariantFormModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card w-full max-w-lg p-6.5">
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+      <div
+        ref={modalRef}
+        className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card w-full max-w-lg p-6.5 max-h-[90vh] overflow-y-auto"
+      >
         <h3 className="font-semibold text-dark dark:text-white mb-4">
           {editingVariant ? "Edit Variant" : "Add New Variant"}
         </h3>
@@ -166,7 +190,7 @@ export function VariantFormModal({
           )}
 
           <ImageUpload
-            label="Variant Image (Optional)"
+            label="Variant Image"
             value={watch("image")}
             onChange={(url) => setValue("image", url)}
             error={errors.image?.message}
@@ -175,17 +199,54 @@ export function VariantFormModal({
 
           <div className="mb-4.5">
             <label className="mb-2.5 block text-black dark:text-white">
-              Attributes (JSON)
+              Attributes
             </label>
-            <textarea
-              rows={6}
-              placeholder='Enter attributes as JSON (e.g., {"color": "Red", "size": "M"})'
-              className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
-              {...register("attributes")}
-            ></textarea>
-            {errors.attributes && (
-              <p className="text-red-500 text-sm mt-1">{errors.attributes.message}</p>
-            )}
+            <div className="flex flex-col gap-2">
+              {attributeList.map((attr, index) => (
+                <div key={index} className="flex gap-2">
+                  <InputGroup
+                    type="text"
+                    placeholder="Key (e.g., Color)"
+                    value={attr.key}
+                    onChange={(e) => {
+                      const newAttrList = [...attributeList];
+                      newAttrList[index].key = e.target.value;
+                      setAttributeList(newAttrList);
+                    }}
+                    className="flex-1"
+                  />
+                  <InputGroup
+                    type="text"
+                    placeholder="Value (e.g., Red)"
+                    value={attr.value}
+                    onChange={(e) => {
+                      const newAttrList = [...attributeList];
+                      newAttrList[index].value = e.target.value;
+                      setAttributeList(newAttrList);
+                    }}
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newAttrList = attributeList.filter((_, i) => i !== index);
+                      setAttributeList(newAttrList);
+                    }}
+                    className="flex items-center justify-center rounded bg-red-500 px-3 py-2 text-white hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setAttributeList([...attributeList, { key: "", value: "" }])}
+                className="flex justify-center rounded bg-blue-500 p-3 font-medium text-gray hover:bg-blue-600"
+              >
+                Add Attribute
+              </button>
+            </div>
+            {/* Zod validation for attributes will still apply, but handled indirectly */}
           </div>
 
           <div className="flex justify-end gap-4">
@@ -206,6 +267,7 @@ export function VariantFormModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
