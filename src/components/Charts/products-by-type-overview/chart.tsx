@@ -1,0 +1,131 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { type ApexOptions } from "apexcharts";
+import { type PropsWithClassName } from "@/types/props";
+import { formatNumber } from "@/lib/format-number";
+
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+type ChartProps = PropsWithClassName & {
+  chartTitle: string;
+  series: { name: string; data: number[] }[];
+  categories: (string | number)[];
+};
+
+export function ProductsByTypeChart({
+  className,
+  chartTitle,
+  series,
+  categories,
+}: ChartProps) {
+  const options: ApexOptions = {
+    chart: {
+      type: "bar",
+      height: 335,
+      stacked: true,
+      toolbar: {
+        show: false,
+      },
+    },
+    colors: ["#3BA0FF", "#2CD673", "#FFB648"], // Example colors
+    responsive: [
+      {
+        breakpoint: 1024,
+        options: {
+          plotOptions: {
+            bar: {
+              horizontal: false,
+            },
+          },
+        },
+      },
+    ],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        borderRadius: 0,
+        columnWidth: "25%",
+        barHeight: "50%",
+      },
+    },
+    xaxis: {
+      type: "category",
+      categories: categories,
+      labels: {
+        style: {
+          colors: "#616161",
+          fontSize: "12px",
+        },
+      },
+    },
+    yaxis: {
+      labels: {
+        formatter: (value) => formatNumber(value),
+        style: {
+          colors: "#616161",
+          fontSize: "12px",
+        },
+      },
+    },
+    legend: {
+      position: "top",
+      horizontalAlign: "left",
+      fontFamily: "Satoshi",
+      fontWeight: 500,
+      fontSize: "14px",
+      markers: {
+        radius: 99,
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return formatNumber(val);
+        },
+      },
+    },
+    grid: {
+      xaxis: {
+        lines: {
+          show: false,
+        },
+      },
+      yaxis: {
+        lines: {
+          show: true,
+        },
+      },
+    },
+  };
+
+  return (
+    <div
+      className={`col-span-12 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-8 ${className}`}
+    >
+      <div className="mb-3 justify-between gap-4 sm:flex">
+        <div>
+          <h5 className="font-semibold text-xl text-black dark:text-white">
+            {chartTitle}
+          </h5>
+        </div>
+      </div>
+
+      <div className="-mx-8">
+        <Chart
+          options={options}
+          series={series}
+          type="bar"
+          height={350}
+          width="100%"
+        />
+      </div>
+    </div>
+  );
+}

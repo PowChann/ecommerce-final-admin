@@ -13,3 +13,5 @@ export function standardFormat(value: number) {
     maximumFractionDigits: 2,
   });
 }
+
+export { standardFormat as formatNumber };

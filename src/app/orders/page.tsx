@@ -2,6 +2,7 @@
 
 import Breadcrumb from "@/components/ui/breadcrumb";
 import { Select } from "@/components/form-elements/select";
+import { PeriodPicker } from "@/components/period-picker"; // Import PeriodPicker
 import {
   Table,
   TableBody,
@@ -16,11 +17,13 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast"; // Import toast
+import { useSearchParams } from "next/navigation"; // Import useSearchParams
+import { extractTimeFrame, getDateRangeFromTimeFrame } from "@/lib/timeframe-extractor"; // Import date range utilities
 
 // Placeholder Icon
 const EyeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-    <path d="M9 3.375C5.25 3.375 2.0475 5.7075 0.75 9C2.0475 12.2925 5.25 14.625 9 14.625C12.75 14.625 15.9525 12.2925 17.25 9C15.9525 5.7075 12.75 3.375 9 3.375ZM9 12.75C6.93 12.75 5.25 11.07 5.25 9C5.25 6.93 6.93 5.25 9 5.25C11.07 5.25 12.75 6.93 12.75 9C12.75 11.07 11.07 12.75 9 12.75ZM9 6.75C7.755 6.75 6.75 7.755 6.75 9C6.75 10.245 7.755 11.25 9 11.25C10.245 11.25 11.25 10.245 11.25 9C11.25 7.755 10.245 6.75 9 6.75Z" />
+    <path d="M9 3.375C5.25 3.375 2.0475 5.7075 0.75 9C2.0475 12.2925 5.25 14.625 9 14.625C12.75 14.625 15.9525 12.2925 17.25 9C15.9525 5.7075 12.75 3.375 9 3.375ZM9 12.75C6.93 12.75 5.25 11.07 5.25 9C5.25 6.93 6.93 5.25 9 5.25C11.07 12.75 11.07 12.75 9 12.75ZM9 6.75C7.755 6.75 6.75 7.755 6.75 9C6.75 10.245 7.755 11.25 9 11.25C10.245 11.25 11.25 10.245 11.25 9C11.25 7.755 10.245 6.75 9 6.75Z" />
   </svg>
 );
 
@@ -38,15 +41,22 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const searchParams = useSearchParams();
+  const selectedTimeFrame = extractTimeFrame(searchParams.get("selected_time_frame") || undefined);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
+      const { startDate, endDate } = getDateRangeFromTimeFrame(selectedTimeFrame);
+
       const response = await api.get("/orders/admin/all", {
         params: {
           page,
-          limit: 10,
+          limit: 20,
           sort: "createdAt",
-          order: "desc", // Assuming your API supports sort order param
+          order: "desc",
+          startDate,
+          endDate,
         },
       });
       
@@ -70,7 +80,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [page]);
+  }, [page, selectedTimeFrame]); // Re-fetch orders when page or time frame changes
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
@@ -87,7 +97,10 @@ export default function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-      <Breadcrumb pageName="Orders" />
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-x-4">
+        <Breadcrumb pageName="Orders" />
+        <PeriodPicker />
+      </div>
 
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="max-w-full overflow-x-auto">
