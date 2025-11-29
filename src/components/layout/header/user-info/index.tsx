@@ -7,47 +7,80 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
-import axios from "axios";
-import Image from "next/image";
+import { authClient } from "@/lib/authClient";
+import Image from "next/image"; // Import Next Image
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
-import { useAuth } from "@/context/AuthContext";
+
+// Icon Login tạm thời
+const LogInIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="size-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
+    />
+  </svg>
+);
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const { logout, user, isAuthenticated } = useAuth();
 
-  // Placeholder user info if not authenticated
-  const DEFAULT_USER = {
-    name: "Guest User",
-    email: "guest@example.com",
-    img: "https://ui-avatars.com/api/?name=Guest+User&background=random",
-  };
+  const { data: session, isPending } = authClient.useSession();
 
-  const currentUser = isAuthenticated && user ? user : DEFAULT_USER;
+  const user = session?.user;
 
   const handleLogout = async () => {
-    setIsOpen(false); // Close dropdown before logout
+    setIsOpen(false);
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Logged out successfully!");
+          router.push("/auth/sign-in");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    });
+  };
 
-    try {
-      const response = await axios.post("/api/auth/logout", {}, {
-        withCredentials: true,
-      });
+  // 1. Loading State
+  if (isPending) {
+    return (
+      <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-dark-3" />
+    );
+  }
 
-      if (response.status === 200) {
-        logout(); // Cập nhật trạng thái người dùng trong AuthContext
-        toast.success("Logged out successfully!");
-        router.push("/auth/sign-in"); // Chuyển hướng đến trang đăng nhập
-      }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Failed to log out. Please try again.";
-      toast.error(errorMessage);
-      console.error("Logout error:", error);
-    }
+  // 2. Chưa đăng nhập: Hiển thị nút Sign In
+  if (!session) {
+    return (
+      <Link
+        href="/auth/sign-in"
+        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white transition hover:bg-opacity-90 dark:bg-white dark:text-dark dark:hover:bg-gray-2"
+      >
+        <LogInIcon />
+        <span>Sign In</span>
+      </Link>
+    );
+  }
+
+  // 3. Đã đăng nhập: Xử lý thông tin user
+  const currentUser = {
+    name: user?.name || "User",
+    email: user?.email || "",
+    image: user?.image || "",
   };
 
   return (
@@ -56,14 +89,24 @@ export function UserInfo() {
         <span className="sr-only">My Account</span>
 
         <figure className="flex items-center gap-3">
-          <Image
-            src={currentUser.img || null} // Truyền null nếu currentUser.img là chuỗi rỗng
-            className="size-12 rounded-full"
-            alt={`Avatar of ${currentUser.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          />
+          {/* --- BẮT ĐẦU PHẦN SỬA AVATAR --- */}
+          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-gray-300 transition-colors duration-200 hover:border-primary">
+            {currentUser.image ? (
+              <Image
+                src={currentUser.image}
+                alt={`Avatar of ${currentUser.name}`}
+                className="h-full w-full object-cover"
+                width={100} // Cần thiết cho Next/Image
+                height={100}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-primary text-lg font-bold text-white">
+                {currentUser.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+          {/* --- KẾT THÚC PHẦN SỬA AVATAR --- */}
+
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
             <span>{currentUser.name}</span>
 
@@ -83,26 +126,31 @@ export function UserInfo() {
         className="border border-stroke bg-white shadow-md dark:border-dark-3 dark:bg-gray-dark min-[230px]:min-w-[17.5rem]"
         align="end"
       >
-        <h2 className="sr-only">User information</h2>
+        {/* Phần hiển thị user trong dropdown cũng nên dùng logic avatar tương tự cho đồng bộ */}
+        <div className="flex items-center gap-2.5 px-5 py-3.5">
+          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-gray-300">
+            {currentUser.image ? (
+              <Image
+                src={currentUser.image}
+                alt={`Avatar of ${currentUser.name}`}
+                className="h-full w-full object-cover"
+                width={100}
+                height={100}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-primary text-lg font-bold text-white">
+                {currentUser.name?.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
 
-        <figure className="flex items-center gap-2.5 px-5 py-3.5">
-          <Image
-            src={currentUser.img || null}
-            className="size-12 rounded-full"
-            alt={`Avatar for ${currentUser.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          />
-
-          <figcaption className="space-y-1 text-base font-medium">
+          <div className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
               {currentUser.name}
             </div>
-
             <div className="leading-none text-gray-6">{currentUser.email}</div>
-          </figcaption>
-        </figure>
+          </div>
+        </div>
 
         <hr className="border-[#E8E8E8] dark:border-dark-3" />
 
@@ -113,20 +161,7 @@ export function UserInfo() {
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
           >
             <UserIcon />
-
             <span className="mr-auto text-base font-medium">View profile</span>
-          </Link>
-
-          <Link
-            href={"/pages/settings"}
-            onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-          >
-            <SettingsIcon />
-
-            <span className="mr-auto text-base font-medium">
-              Account Settings
-            </span>
           </Link>
         </div>
 
@@ -138,7 +173,6 @@ export function UserInfo() {
             onClick={handleLogout}
           >
             <LogOutIcon />
-
             <span className="text-base font-medium">Log out</span>
           </button>
         </div>
