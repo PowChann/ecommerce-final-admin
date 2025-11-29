@@ -9,7 +9,7 @@ import { PeriodPicker } from "@/components/period-picker"; // Import PeriodPicke
 
 import { extractTimeFrame } from "@/lib/timeframe-extractor";
 import { Suspense } from "react";
-import Link from 'next/link';
+import Link from "next/link";
 import { OverviewCardsGroup } from "./_components/overview-cards";
 import { OverviewCardsSkeleton } from "./_components/overview-cards/skeleton";
 import { RecentOrders } from "./_components/recent-orders";
@@ -32,65 +32,110 @@ export default async function Home({ searchParams }: PropsType) {
         <OverviewCardsGroup />
       </Suspense>
 
-      <div className="mt-6 md:mt-8 2xl:mt-10 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold mb-4">Quick Navigation</h2>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 md:mt-8 2xl:mt-10">
+        <h2 className="mb-4 text-xl font-semibold">Quick Navigation</h2>
         <PeriodPicker />
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-7.5">
-          <Link href="/auth/sign-in" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Sign In / Đăng nhập
-          </Link>
-          <Link href="/users" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            User Management
-          </Link>
-          <Link href="/products" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Product Management
-          </Link>
-          <Link href="/categories" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Category Management
-          </Link>
-          <Link href="/brands" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Brand Management
-          </Link>
-          <Link href="/tags" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Tag Management
-          </Link>
-          <Link href="/orders" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Order Management
-          </Link>
-          <Link href="/discounts" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Discount Management
-          </Link>
-          <Link href="/reviews" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Review & Rating Management
-          </Link>
-          <Link href="/payments" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
-            Payment Management
-          </Link>
-        </div>
+        <Link
+          href="/auth/sign-in"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Sign In / Đăng nhập
+        </Link>
+        <Link
+          href="/users"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          User Management
+        </Link>
+        <Link
+          href="/products"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Product Management
+        </Link>
+        <Link
+          href="/categories"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Category Management
+        </Link>
+        <Link
+          href="/brands"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Brand Management
+        </Link>
+        <Link
+          href="/tags"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Tag Management
+        </Link>
+        <Link
+          href="/orders"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Order Management
+        </Link>
+        <Link
+          href="/discounts"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Discount Management
+        </Link>
+        <Link
+          href="/reviews"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Review & Rating Management
+        </Link>
+        <Link
+          href="/payments"
+          className="dark:bg-boxdark flex items-center justify-center rounded-md bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+        >
+          Payment Management
+        </Link>
+      </div>
 
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
         <Suspense fallback={<div>Loading user data...</div>}>
-          <UsersOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+          <UsersOverview
+            className="col-span-12 xl:col-span-6"
+            timeFrame={selectedTimeFrame}
+          />
         </Suspense>
         <Suspense fallback={<div>Loading order data...</div>}>
-          <OrdersOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+          <OrdersOverview
+            className="col-span-12 xl:col-span-6"
+            timeFrame={selectedTimeFrame}
+          />
         </Suspense>
       </div>
 
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
         <Suspense fallback={<div>Loading revenue data...</div>}>
-          <RevenueOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+          <RevenueOverview
+            className="col-span-12 xl:col-span-6"
+            timeFrame={selectedTimeFrame}
+          />
         </Suspense>
         <Suspense fallback={<div>Loading profit data...</div>}>
-          <ProfitOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+          <ProfitOverview
+            className="col-span-12 xl:col-span-6"
+            timeFrame={selectedTimeFrame}
+          />
         </Suspense>
       </div>
 
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
         <Suspense fallback={<div>Loading products by type data...</div>}>
-          <ProductsByTypeOverview className="col-span-12" timeFrame={selectedTimeFrame} />
+          <ProductsByTypeOverview
+            className="col-span-12"
+            timeFrame={selectedTimeFrame}
+          />
         </Suspense>
       </div>
 
@@ -110,7 +155,9 @@ export default async function Home({ searchParams }: PropsType) {
 
       {/* Recent Orders Section */}
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
-        <div className="col-span-12"> {/* Occupy full width */}
+        <div className="col-span-12">
+          {" "}
+          {/* Occupy full width */}
           <Suspense fallback={<div>Loading recent orders...</div>}>
             <RecentOrders />
           </Suspense>
@@ -119,7 +166,9 @@ export default async function Home({ searchParams }: PropsType) {
 
       {/* Low Stock Products Section */}
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
-        <div className="col-span-12"> {/* Occupy full width */}
+        <div className="col-span-12">
+          {" "}
+          {/* Occupy full width */}
           <Suspense fallback={<div>Loading low stock products...</div>}>
             <LowStockProducts />
           </Suspense>
