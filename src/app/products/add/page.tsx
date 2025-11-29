@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
+import { ImageUpload } from "@/components/upload/ImageUpload"; // Import ImageUpload
 
 const productSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long"),
@@ -21,7 +22,7 @@ const productSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters long"),
   categoryId: z.string().min(1, "Category is required"),
   brandId: z.string().min(1, "Brand is required"),
-  imageUrl: z.string().url("Image URL must be a valid URL"),
+  imageUrl: z.string().url("Image URL must be a valid URL").or(z.literal("")),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -179,18 +180,13 @@ export default function AddProductPage() {
                   </p>
                 )}
                 
-                 <InputGroup
-                  label="Image URL"
-                  type="text"
-                  placeholder="Enter image URL"
+                 <ImageUpload
+                  label="Product Image"
+                  value={watch("imageUrl")}
+                  onChange={(url) => setValue("imageUrl", url)}
+                  error={errors.imageUrl?.message}
                   className="mb-6"
-                  {...register("imageUrl")}
                 />
-                {errors.imageUrl && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.imageUrl.message}
-                  </p>
-                )}
 
                 <button
                   type="submit"
