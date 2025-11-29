@@ -4,21 +4,26 @@ export async function getOverviewData() {
   // await new Promise((resolve) => setTimeout(resolve, 1000));
 
   return {
-    sales: {
+    revenue: {
       value: 12000,
       growthRate: 12.5,
     },
-    users: {
+    totalUsers: {
       value: 450,
       growthRate: 5.2,
     },
-    pendingOrders: {
-      value: 25,
-      growthRate: -2.1,
+    newUsers: {
+      value: 30,
+      growthRate: 8.1,
     },
-    productStock: {
-      value: 340,
-      growthRate: 0,
+    totalOrders: {
+      value: 150,
+      growthRate: 7.0,
+    },
+    topSellingProduct: {
+      name: "Smart Watch X",
+      value: 120, // number of units sold
+      growthRate: 15.0,
     },
   };
 }

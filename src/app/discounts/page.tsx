@@ -222,20 +222,22 @@ export default function DiscountsPage() {
                             <TableHead>Code</TableHead>
                             <TableHead>Value</TableHead>
                             <TableHead>Used</TableHead>
+                            <TableHead>Time Created</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>
                         ) : discounts.length === 0 ? (
-                             <TableRow><TableCell colSpan={4} className="text-center">No active discounts</TableCell></TableRow>
+                             <TableRow><TableCell colSpan={5} className="text-center">No active discounts</TableCell></TableRow>
                         ) : (
                             discounts.map(discount => (
                                 <TableRow key={discount.id}>
                                     <TableCell className="font-bold">{discount.code}</TableCell>
                                     <TableCell>{discount.value}</TableCell>
                                     <TableCell>{discount.timesUsed} / {discount.usageLimit}</TableCell>
+                                    <TableCell>{dayjs(discount.createdAt).format("DD/MM/YYYY")}</TableCell>
                                     <TableCell className="text-right">
                                         <button onClick={() => handleEdit(discount)} className="text-primary hover:underline mr-3">Edit</button>
                                         <button onClick={() => handleDelete(discount.id)} className="text-red-500 hover:underline">Delete</button>

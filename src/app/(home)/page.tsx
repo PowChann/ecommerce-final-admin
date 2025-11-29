@@ -1,7 +1,13 @@
 import { PaymentsOverview } from "@/components/charts/payments-overview";
 import { WeeksProfit } from "@/components/charts/weeks-profit";
+import { UsersOverview } from "@/components/charts/users-overview";
+import { OrdersOverview } from "@/components/charts/orders-overview";
+import { RevenueOverview } from "@/components/charts/revenue-overview";
+import { ProfitOverview } from "@/components/charts/profit-overview";
+import { ProductsByTypeOverview } from "@/components/charts/products-by-type-overview";
+import { PeriodPicker } from "@/components/period-picker"; // Import PeriodPicker
 
-import { createTimeFrameExtractor } from "@/lib/timeframe-extractor";
+import { extractTimeFrame } from "@/lib/timeframe-extractor";
 import { Suspense } from "react";
 import Link from 'next/link';
 import { OverviewCardsGroup } from "./_components/overview-cards";
@@ -16,8 +22,9 @@ type PropsType = {
 };
 
 export default async function Home({ searchParams }: PropsType) {
-  const { selected_time_frame } = await searchParams;
-  const extractTimeFrame = createTimeFrameExtractor(selected_time_frame);
+  const selectedTimeFrame = extractTimeFrame(
+    (await searchParams).selected_time_frame,
+  );
 
   return (
     <>
@@ -25,9 +32,12 @@ export default async function Home({ searchParams }: PropsType) {
         <OverviewCardsGroup />
       </Suspense>
 
-      <div className="mt-6 md:mt-8 2xl:mt-10">
+      <div className="mt-6 md:mt-8 2xl:mt-10 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold mb-4">Quick Navigation</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-7.5">
+        <PeriodPicker />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-7.5">
           <Link href="/auth/sign-in" className="flex items-center justify-center p-4 bg-white dark:bg-boxdark rounded-md shadow-sm hover:shadow-md transition-all duration-200">
             Sign In / Đăng nhập
           </Link>
@@ -59,18 +69,41 @@ export default async function Home({ searchParams }: PropsType) {
             Payment Management
           </Link>
         </div>
+
+      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
+        <Suspense fallback={<div>Loading user data...</div>}>
+          <UsersOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+        </Suspense>
+        <Suspense fallback={<div>Loading order data...</div>}>
+          <OrdersOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+        </Suspense>
+      </div>
+
+      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
+        <Suspense fallback={<div>Loading revenue data...</div>}>
+          <RevenueOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+        </Suspense>
+        <Suspense fallback={<div>Loading profit data...</div>}>
+          <ProfitOverview className="col-span-12 xl:col-span-6" timeFrame={selectedTimeFrame} />
+        </Suspense>
+      </div>
+
+      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
+        <Suspense fallback={<div>Loading products by type data...</div>}>
+          <ProductsByTypeOverview className="col-span-12" timeFrame={selectedTimeFrame} />
+        </Suspense>
       </div>
 
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
         <PaymentsOverview
           className="col-span-12 xl:col-span-8"
-          key={extractTimeFrame("payments_overview")}
-          timeFrame={extractTimeFrame("payments_overview")?.split(":")[1]}
+          key={selectedTimeFrame}
+          timeFrame={selectedTimeFrame}
         />
 
         <WeeksProfit
-          key={extractTimeFrame("weeks_profit")}
-          timeFrame={extractTimeFrame("weeks_profit")?.split(":")[1]}
+          key={selectedTimeFrame}
+          timeFrame={selectedTimeFrame}
           className="col-span-12 xl:col-span-4"
         />
       </div>
@@ -95,5 +128,3 @@ export default async function Home({ searchParams }: PropsType) {
     </>
   );
 }
-
-

@@ -49,36 +49,21 @@ export function AuthContextProvider({ children }: PropsWithChildren) {
 
   const fetchUser = async () => {
     setIsLoading(true);
-    // Tạm thời giả định một người dùng admin đã đăng nhập
-    // SAU NÀY, KHI BACKEND CÓ ENDPOINT /api/auth/me, HÃY HOÀN TÁC THAY ĐỔI NÀY
     try {
-      // Giả lập thông tin người dùng admin
-      const mockAdminUser: User = {
-        id: "mock-admin-id",
-        email: "admin@example.com",
-        role: "admin",
-        // Thêm các trường khác nếu cần
-      };
-      
-      setUser(mockAdminUser);
-      setIsAuthenticated(true);
-      setRole(mockAdminUser.role);
-
-      // Comment out the actual API call for now
-      // const response = await axios.get("/api/auth/me", {
-      //   withCredentials: true,
-      // });
-      // if (response.status === 200 && response.data.data.user) {
-      //   const userData = response.data.data.user;
-      //   setUser(userData);
-      //   setIsAuthenticated(true);
-      //   setRole(userData.role);
-      // } else {
-      //   logout();
-      // }
+      const response = await axios.get("/api/auth/me", {
+        withCredentials: true,
+      });
+      if (response.status === 200 && response.data.user) {
+        const userData = response.data.user;
+        setUser(userData);
+        setIsAuthenticated(true);
+        setRole(userData.role);
+      } else {
+        logout();
+      }
     } catch (error) {
-      // console.error("Failed to fetch user:", error);
-      // logout(); // Vẫn giữ logout nếu có lỗi không mong muốn
+      console.error("Failed to fetch user:", error);
+      logout();
     } finally {
       setIsLoading(false);
     }

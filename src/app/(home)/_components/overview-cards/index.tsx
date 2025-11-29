@@ -4,15 +4,16 @@ import { OverviewCard } from "./card";
 import * as icons from "./icons";
 
 export async function OverviewCardsGroup() {
-  const { sales, users, pendingOrders, productStock } = await getOverviewData();
+  const { revenue, totalUsers, newUsers, totalOrders, topSellingProduct } =
+    await getOverviewData();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4 2xl:gap-7.5">
       <OverviewCard
-        label="Total Sales"
+        label="Revenue"
         data={{
-          ...sales,
-          value: "$" + compactFormat(sales.value),
+          ...revenue,
+          value: "$" + compactFormat(revenue.value),
         }}
         Icon={icons.Profit}
       />
@@ -20,28 +21,37 @@ export async function OverviewCardsGroup() {
       <OverviewCard
         label="Total Users"
         data={{
-          ...users,
-          value: compactFormat(users.value),
+          ...totalUsers,
+          value: compactFormat(totalUsers.value),
         }}
         Icon={icons.Users}
       />
 
       <OverviewCard
+        label="New Users"
+        data={{
+          ...newUsers,
+          value: compactFormat(newUsers.value),
+        }}
+        Icon={icons.Users} // Using Users icon for new users
+      />
+
+      <OverviewCard
         label="Total Orders"
         data={{
-          ...pendingOrders,
-          value: compactFormat(pendingOrders.value),
+          ...totalOrders,
+          value: compactFormat(totalOrders.value),
         }}
         Icon={icons.Product} // Using Product icon as a placeholder
       />
 
       <OverviewCard
-        label="Product Stock"
+        label="Top Selling Product"
         data={{
-          ...productStock,
-          value: compactFormat(productStock.value),
+          ...topSellingProduct,
+          value: `${topSellingProduct.value} units`, // Assuming value is units sold
         }}
-        Icon={icons.Product}
+        Icon={icons.Product} // Using Product icon for top selling product
       />
     </div>
   );
