@@ -13,6 +13,7 @@ import api from "@/services/api";
 import { User } from "@/types/backend";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import Image from "next/image"; // Add Image import
 import toast from "react-hot-toast"; // Import toast
 
 export default function UsersPage() {
@@ -85,6 +86,7 @@ export default function UsersPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
+                <TableHead>Avatar</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
@@ -96,15 +98,24 @@ export default function UsersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                   <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
+                   <TableCell colSpan={7} className="text-center py-10">Loading...</TableCell>
                 </TableRow>
               ) : users.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={6} className="text-center py-10">No Users Found</TableCell>
+                   <TableCell colSpan={7} className="text-center py-10">No Users Found</TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id} className="border-[#eee] dark:border-dark-3">
+                    <TableCell className="min-w-[70px]">
+                      <Image
+                        src="/images/product/product-01.png" // Temporary image
+                        alt="User Avatar"
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover"
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
