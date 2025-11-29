@@ -35,7 +35,7 @@ export function ImageUpload({ label, value, onChange, error, className }: ImageU
         setPreviewUrl(reader.result as string);
         // Tự động gọi upload sau khi chọn và tạo preview
         // Sử dụng một timeout nhỏ để đảm bảo state được cập nhật
-        setTimeout(() => handleUpload(file), 0);
+      setTimeout(() => handleUpload(file), 0);
       };
       reader.readAsDataURL(file);
     } else {
@@ -46,19 +46,18 @@ export function ImageUpload({ label, value, onChange, error, className }: ImageU
 
   const handleUpload = async (fileToUpload: File | null = selectedFile) => {
     if (!fileToUpload) {
-      // toast.error("No file selected for upload."); // Không báo lỗi nếu được gọi tự động
       return;
     }
 
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("image", fileToUpload); // Đổi 'file' thành 'image'
+      formData.append("image", fileToUpload);
 
       // Simulate API call for image upload
       // In a real application, replace this with your actual backend upload endpoint
       // and handle response to get the actual image URL.
-      const response = await axios.post("/api/upload", formData, { // Đổi URL API upload
+      const response = await axios.post("/api/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -98,7 +97,7 @@ export function ImageUpload({ label, value, onChange, error, className }: ImageU
         {previewUrl ? (
           <div className="relative h-40 w-full rounded-md overflow-hidden mb-4">
             <Image
-              src={previewUrl} // Chỉ truyền previewUrl nếu nó có giá trị
+              src={previewUrl}
               alt="Preview"
               layout="fill"
               objectFit="contain"
@@ -113,16 +112,34 @@ export function ImageUpload({ label, value, onChange, error, className }: ImageU
             </button>
           </div>
         ) : (
-          <div className="text-center text-gray-500 mb-4">No image selected</div>
+          <div className="text-center text-gray-500 mb-4">
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="sr-only" // Hide the default file input
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center justify-center rounded-md border border-stroke bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 dark:border-strokedark dark:bg-primary dark:hover:bg-opacity-90"
+            >
+              Choose File
+            </button>
+            {selectedFile && <span className="ml-2 text-black dark:text-white">{selectedFile.name}</span>}
+          </div>
         )}
 
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="mb-4 w-full cursor-pointer rounded-lg border border-stroke bg-transparent outline-none transition file:mr-4 file:rounded file:border-[0.5px] file:border-stroke file:bg-[#EEEEEE] file:py-2.5 file:px-4 file:text-black hover:file:bg-primary hover:file:text-white dark:file:border-strokedark dark:file:bg-[#202B38] dark:file:text-white"
-        />
+        {selectedFile && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="mb-4 inline-flex items-center justify-center rounded-md border border-stroke bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 dark:border-strokedark dark:bg-primary dark:hover:bg-opacity-90"
+          >
+            Change File
+          </button>
+        )}
         
         {uploading && <p className="text-sm text-blue-500">Uploading...</p>}
       </div>

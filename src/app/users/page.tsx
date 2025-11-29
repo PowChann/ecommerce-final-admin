@@ -15,12 +15,15 @@ import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import Image from "next/image"; // Add Image import
 import toast from "react-hot-toast"; // Import toast
+import { UserEditModal } from "@/components/users/UserEditModal"; // Import UserEditModal
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -49,7 +52,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page]);
+  }, [page, isEditModalOpen]); // Re-fetch users when page changes or edit modal closes
 
   const toggleBan = async (user: User) => {
     const newStatus = !user.banned;
@@ -75,6 +78,16 @@ export default function UsersPage() {
       console.error("Failed to delete user", error);
       toast.error(error.response?.data?.message || "Failed to delete user.");
     }
+  };
+
+  const handleEdit = (userId: string) => {
+    setEditingUserId(userId);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingUserId(null);
   };
 
   return (
@@ -135,6 +148,12 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                            onClick={() => handleEdit(user.id)}
+                            className="text-xs px-3 py-1 border rounded text-white bg-blue-500 hover:bg-blue-600 w-20"
+                        >
+                            Edit
+                        </button>
                         <button 
                             onClick={() => toggleBan(user)}
                             className={`text-xs px-3 py-1 border rounded text-white w-20 ${user.banned ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600'}`}
@@ -175,6 +194,13 @@ export default function UsersPage() {
           </button>
         </div>
       </div>
+
+      <UserEditModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        userId={editingUserId}
+        onSave={fetchUsers}
+      />
     </div>
   );
 }
