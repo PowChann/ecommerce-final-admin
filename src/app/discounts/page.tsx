@@ -12,24 +12,53 @@ import {
 } from "@/components/ui/table";
 import api from "@/services/api";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
 
 interface Discount {
   id: string;
-  code: string;
-  value: number;
-  usageLimit: number;
-  timesUsed: number;
+  code: string; // Mã giảm giá (tối đa 5 ký tự, không null, duy nhất)
+  value: number; // Giá trị giảm giá (số nguyên, không null)
+  usageLimit: number; // Số lần sử dụng tối đa (số nguyên, không null, mặc định 10) - tương ứng với maxUsageCount
+  timesUsed: number; // Số lần đã sử dụng hiện tại (số nguyên, không null, mặc định 0) - tương ứng với currentUsageCount
+  createdAt: string; // Timestamp, tự động tạo khi tạo mới
+  updatedAt: string; // Timestamp, tự động cập nhật khi có thay đổi
 }
+
+const discountSchema = z.object({
+  code: z.string().min(1, "Code is required").max(5, "Code must be at most 5 characters long"),
+  value: z.preprocess(
+    (a) => parseFloat(z.string().parse(a)),
+    z.number().positive("Value must be a positive number")
+  ),
+  usageLimit: z.preprocess(
+    (a) => parseInt(z.string().parse(a), 10),
+    z.number().int().min(1, "Usage limit must be at least 1")
+  ),
+});
+
+type DiscountFormData = z.infer<typeof discountSchema>;
 
 export default function DiscountsPage() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
-    code: "",
-    value: "",
-    usageLimit: "",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm<DiscountFormData>({
+    resolver: zodResolver(discountSchema),
+    defaultValues: {
+      code: "",
+      value: 0,
+      usageLimit: 10,
+    },
   });
   
   const fetchDiscounts = async () => {
@@ -38,8 +67,9 @@ export default function DiscountsPage() {
       const response = await api.get("/discounts");
       const data = Array.isArray(response.data) ? response.data : response.data.data || [];
       setDiscounts(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch discounts", error);
+      toast.error(error.response?.data?.message || "Failed to fetch discounts.");
     } finally {
       setLoading(false);
     }
@@ -49,68 +79,53 @@ export default function DiscountsPage() {
     fetchDiscounts();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    /*
-    // TEMPORARILY DISABLED
+  const onSubmit = async (data: DiscountFormData) => {
     try {
       const payload = {
-        ...formData,
-        value: parseInt(formData.value),
-        usageLimit: parseInt(formData.usageLimit),
+        ...data,
+        value: data.value,
+        usageLimit: data.usageLimit,
       };
 
       if (editingId) {
         await api.put(`/discounts/${editingId}`, payload);
-        setEditingId(null);
+        toast.success("Discount updated successfully!");
       } else {
         await api.post("/discounts", payload);
+        toast.success("Discount created successfully!");
       }
       
-      // Reset form
-      setFormData({ code: "", value: "", usageLimit: "" });
-      fetchDiscounts();
-    } catch (error) {
+      setEditingId(null);
+      reset({ code: "", value: 0, usageLimit: 10 }); // Reset form
+      fetchDiscounts(); // Refresh list
+    } catch (error: any) {
       console.error("Failed to save discount", error);
-      alert("Failed to save discount");
+      toast.error(error.response?.data?.message || "Failed to save discount.");
     }
-    */
-    alert("Chức năng thêm/sửa mã giảm giá đang tạm khóa.");
   };
 
   const handleEdit = (discount: Discount) => {
-    // setEditingId(discount.id);
-    // setFormData({
-    //     code: discount.code,
-    //     value: discount.value.toString(),
-    //     usageLimit: discount.usageLimit.toString()
-    // });
-    alert("Chức năng chỉnh sửa đang tạm khóa.");
+    setEditingId(discount.id);
+    setValue("code", discount.code);
+    setValue("value", discount.value);
+    setValue("usageLimit", discount.usageLimit);
   };
 
   const handleDelete = async (id: string) => {
-    /*
-    // TEMPORARILY DISABLED
-    if (!confirm("Delete this discount?")) return;
+    if (!confirm("Are you sure you want to delete this discount?")) return;
     try {
       await api.delete(`/discounts/${id}`);
-      setDiscounts(prev => prev.filter(d => d.id !== id));
-    } catch (error) {
+      toast.success("Discount deleted successfully!");
+      fetchDiscounts(); // Refresh list
+    } catch (error: any) {
       console.error("Failed to delete discount", error);
-      alert("Failed to delete discount");
+      toast.error(error.response?.data?.message || "Failed to delete discount.");
     }
-    */
-    alert("Chức năng xóa đang tạm khóa.");
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setFormData({ code: "", value: "", usageLimit: "" });
+    reset({ code: "", value: 0, usageLimit: 10 }); // Clear form
   };
 
   return (
@@ -126,40 +141,49 @@ export default function DiscountsPage() {
                 {editingId ? "Edit Discount" : "Create Discount"}
               </h3>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="p-6.5">
                 <InputGroup
                   label="Coupon Code"
                   type="text"
-                  name="code"
                   placeholder="e.g. SUMMER2025"
-                  value={formData.code}
-                  handleChange={handleChange}
+                  {...register("code")}
                   required
                   className="mb-4.5"
                 />
+                {errors.code && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.code.message}
+                  </p>
+                )}
 
                 <InputGroup
                   label="Value (Amount or %)"
                   type="number"
-                  name="value"
                   placeholder="e.g. 10"
-                  value={formData.value}
-                  handleChange={handleChange}
+                  {...register("value", { valueAsNumber: true })}
                   required
                   className="mb-4.5"
                 />
+                {errors.value && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.value.message}
+                  </p>
+                )}
 
                 <InputGroup
                   label="Usage Limit"
                   type="number"
-                  name="usageLimit"
                   placeholder="e.g. 100"
-                  value={formData.usageLimit}
-                  handleChange={handleChange}
+                  {...register("usageLimit", { valueAsNumber: true })}
                   required
                   className="mb-4.5"
                 />
+                {errors.usageLimit && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.usageLimit.message}
+                  </p>
+                )}
 
                 <div className="flex gap-3">
                     <button

@@ -13,6 +13,7 @@ import api from "@/services/api";
 import { User } from "@/types/backend";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast"; // Import toast
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,26 +21,32 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get("/users/admin/all", {
-          params: { page, limit: 10 },
-        });
-        
-        if (response.data && Array.isArray(response.data.data)) {
-           setUsers(response.data.data);
-           setTotalPages(response.data.meta?.totalPages || 1);
-        } else if (Array.isArray(response.data)) {
-           setUsers(response.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch users", error);
-      } finally {
-        setLoading(false);
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/users/admin/all", {
+        params: { page, limit: 10 },
+      });
+      
+      if (response.data && Array.isArray(response.data.data)) {
+         setUsers(response.data.data);
+         setTotalPages(response.data.pagination?.totalPages || 1); // Access pagination from response.data
+      } else {
+         setUsers([]);
+         setTotalPages(1);
+         toast.error("Invalid API response format for users.");
       }
-    };
+    } catch (error: any) {
+      console.error("Failed to fetch users", error);
+      toast.error(error.response?.data?.message || "Failed to fetch users.");
+      setUsers([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUsers();
   }, [page]);
 
@@ -49,10 +56,11 @@ export default function UsersPage() {
 
     try {
       await api.put(`/users/admin/${user.id}`, { banned: newStatus });
+      toast.success(`User ${user.name} has been ${newStatus ? "banned" : "unbanned"} successfully!`);
       setUsers(users.map(u => u.id === user.id ? { ...u, banned: newStatus } : u));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update ban status", error);
-      alert("Failed to update ban status"); // Keep alert for API errors for now
+      toast.error(error.response?.data?.message || "Failed to update ban status.");
     }
   };
 
@@ -60,10 +68,11 @@ export default function UsersPage() {
     if (!confirm("Are you sure you want to delete this user PERMANENTLY?")) return;
     try {
       await api.delete(`/users/admin/${id}`);
+      toast.success("User deleted successfully!");
       setUsers(users.filter(u => u.id !== id));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete user", error);
-      alert("Failed to delete user"); // Keep alert for API errors for now
+      toast.error(error.response?.data?.message || "Failed to delete user.");
     }
   };
 

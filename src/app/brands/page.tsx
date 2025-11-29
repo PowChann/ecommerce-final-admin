@@ -13,21 +13,44 @@ import {
 import api from "@/services/api";
 import { Brand } from "@/types/backend";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
+
+const brandSchema = z.object({
+  name: z.string().min(3, "Brand name must be at least 3 characters long"),
+});
+
+type BrandFormData = z.infer<typeof brandSchema>;
 
 export default function BrandsPage() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: "" });
   
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm<BrandFormData>({
+    resolver: zodResolver(brandSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
   const fetchBrands = async () => {
     setLoading(true);
     try {
       const response = await api.get("/brands");
       const data = Array.isArray(response.data) ? response.data : response.data.data || [];
       setBrands(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch brands", error);
+      toast.error(error.response?.data?.message || "Failed to fetch brands.");
     } finally {
       setLoading(false);
     }
@@ -37,51 +60,44 @@ export default function BrandsPage() {
     fetchBrands();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    /*
-    // TEMPORARILY DISABLED
+  const onSubmit = async (data: BrandFormData) => {
     try {
       if (editingId) {
-        await api.put(`/brands/${editingId}`, formData);
-        setEditingId(null);
+        await api.put(`/brands/${editingId}`, data);
+        toast.success("Brand updated successfully!");
       } else {
-        await api.post("/brands", formData);
+        await api.post("/brands", data);
+        toast.success("Brand created successfully!");
       }
-      setFormData({ name: "" });
-      fetchBrands();
-    } catch (error) {
+      setEditingId(null);
+      reset({ name: "" }); // Clear form
+      fetchBrands(); // Refresh list
+    } catch (error: any) {
       console.error("Failed to save brand", error);
-      alert("Failed to save brand");
+      toast.error(error.response?.data?.message || "Failed to save brand.");
     }
-    */
-    alert("Chức năng thêm/sửa thương hiệu đang tạm khóa.");
   };
 
   const handleEdit = (brand: Brand) => {
-    // setEditingId(brand.id);
-    // setFormData({ name: brand.name });
-    alert("Chức năng chỉnh sửa đang tạm khóa.");
+    setEditingId(brand.id);
+    setValue("name", brand.name);
   };
 
   const handleDelete = async (id: string) => {
-    /*
-    // TEMPORARILY DISABLED
-    if (!confirm("Delete this brand?")) return;
+    if (!confirm("Are you sure you want to delete this brand?")) return;
     try {
       await api.delete(`/brands/${id}`);
-      setBrands(prev => prev.filter(b => b.id !== id));
-    } catch (error) {
+      toast.success("Brand deleted successfully!");
+      fetchBrands(); // Refresh list
+    } catch (error: any) {
       console.error("Failed to delete brand", error);
-      alert("Failed to delete brand");
+      toast.error(error.response?.data?.message || "Failed to delete brand.");
     }
-    */
-    alert("Chức năng xóa đang tạm khóa.");
   };
 
   const handleCancel = () => {
     setEditingId(null);
-    setFormData({ name: "" });
+    reset({ name: "" }); // Clear form
   };
 
   return (
@@ -97,17 +113,21 @@ export default function BrandsPage() {
                 {editingId ? "Edit Brand" : "Add New Brand"}
               </h3>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="p-6.5">
                 <InputGroup
                   label="Brand Name"
                   type="text"
                   placeholder="Enter brand name"
-                  value={formData.name}
-                  handleChange={(e) => setFormData({ name: e.target.value })}
+                  {...register("name")}
                   required
                   className="mb-4.5"
                 />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.name.message}
+                  </p>
+                )}
                 <div className="flex gap-3">
                     <button
                     type="submit"

@@ -33,6 +33,12 @@ export const NAV_DATA = [
         icon: Icons.User,
         items: [],
       },
+      {
+        title: "Payments",
+        url: "/payments",
+        icon: Icons.PieChart,
+        items: [],
+      },
     ],
   },
   {
@@ -54,6 +60,12 @@ export const NAV_DATA = [
         title: "Tags",
         url: "/tags",
         icon: Icons.Alphabet,
+        items: [],
+      },
+      {
+        title: "Product Variants",
+        url: "/product-variants",
+        icon: Icons.FourCircle,
         items: [],
       },
     ],
