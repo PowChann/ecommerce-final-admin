@@ -30,7 +30,7 @@ export interface ProductVariant {
   sku: string;
   price: number;
   quantity: number;
-  image?: string;
+  images?: string[]; // Changed from image?: string to images?: string[]
   attributes: Record<string, any>; // JSON
 }
 

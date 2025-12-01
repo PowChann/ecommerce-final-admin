@@ -34,6 +34,11 @@ const nextConfig = {
         hostname: "ui-avatars.com",
         port: "",
       },
+      {
+        protocol: "https",
+        hostname: "sesflutterapp.s3.ap-southeast-2.amazonaws.com", // Thêm hostname S3 
+        port: "",
+      },
     ],
   },
 };

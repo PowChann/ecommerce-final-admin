@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import api from "@/services/api";
-import { Product } from "@/types/backend";
+import { Product, Brand, Category } from "@/types/backend";
 import { TrashIcon } from "@/assets/icons";
 import toast from "react-hot-toast"; // Import toast
 
@@ -33,6 +33,8 @@ const DeleteIcon = () => (
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -40,25 +42,41 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/products", {
-        params: {
-          page,
-          limit: 10,
-          sortBy: "createdAt",
-          order: "desc",
-        },
-      });
-      if (response.data && Array.isArray(response.data.data)) {
-        setProducts(response.data.data);
-        setTotalPages(response.data.pagination?.totalPages || 1);
+      const [productsRes, brandsRes, categoriesRes] = await Promise.all([
+        api.get("/products", {
+          params: {
+            page,
+            limit: 10,
+            sortBy: "createdAt",
+            order: "desc",
+          },
+        }),
+        api.get("/brands"),
+        api.get("/categories"),
+      ]);
+
+      if (productsRes.data && Array.isArray(productsRes.data.data)) {
+        setProducts(productsRes.data.data);
+        setTotalPages(productsRes.data.pagination?.totalPages || 1);
       } else {
         setProducts([]);
         setTotalPages(1);
         toast.error("Invalid API response format for products.");
       }
+
+      if (brandsRes.data) {
+         const brandsData = Array.isArray(brandsRes.data) ? brandsRes.data : brandsRes.data.data || [];
+         setBrands(brandsData);
+      }
+
+      if (categoriesRes.data) {
+        const categoriesData = Array.isArray(categoriesRes.data) ? categoriesRes.data : categoriesRes.data.data || [];
+        setCategories(categoriesData);
+      }
+
     } catch (error: any) {
-      console.error("Failed to fetch products", error);
-      toast.error(error.response?.data?.message || "Failed to fetch products.");
+      console.error("Failed to fetch data", error);
+      toast.error(error.response?.data?.message || "Failed to fetch data.");
       setProducts([]);
       setTotalPages(1);
     } finally {
@@ -142,9 +160,13 @@ export default function ProductsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{product.category?.name || product.categoryId}</TableCell>
+                    <TableCell>
+                        {product.category?.name || categories.find(c => c.id === product.categoryId)?.name || product.categoryId}
+                    </TableCell>
                     <TableCell>${product.price.toLocaleString()}</TableCell>
-                    <TableCell>{product.brand?.name || product.brandId}</TableCell>
+                    <TableCell>
+                        {product.brand?.name || brands.find(b => b.id === product.brandId)?.name || product.brandId}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-x-3.5">
                         <Link href={`/products/edit/${product.id}`} className="hover:text-primary">

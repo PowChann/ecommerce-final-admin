@@ -15,14 +15,11 @@ import { ImageUpload } from "@/components/upload/ImageUpload"; // Import ImageUp
 
 const productSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long"),
-  price: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive("Price must be a positive number")
-  ),
+  price: z.coerce.number().positive("Price must be a positive number"),
   description: z.string().min(10, "Description must be at least 10 characters long"),
   categoryId: z.string().min(1, "Category is required"),
   brandId: z.string().min(1, "Brand is required"),
-  imageUrl: z.string().url("Image URL must be a valid URL").min(1, "Product image is required"),
+  images: z.array(z.any()).min(1, "At least one product image is required"), // Now an array of Files
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -37,15 +34,16 @@ export default function AddProductPage() {
     formState: { errors },
     setValue,
     watch,
+    control
   } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as any, // Cast to any to resolve TS mismatch
     defaultValues: {
       name: "",
-      price: 0,
+      price: 0, // Changed from "" to 0
       description: "",
       categoryId: "",
       brandId: "",
-      imageUrl: "",
+      images: [], // Default to empty array
     },
   });
 
@@ -64,6 +62,9 @@ export default function AddProductPage() {
         const cats = Array.isArray(catRes.data) ? catRes.data : catRes.data.data || [];
         const brs = Array.isArray(brandRes.data) ? brandRes.data : brandRes.data.data || [];
 
+        console.log("Categories fetched:", cats);
+        console.log("Brands fetched:", brs);
+
         setCategories(cats);
         setBrands(brs);
       } catch (error) {
@@ -76,13 +77,24 @@ export default function AddProductPage() {
   const handleSubmitForm = async (data: ProductFormData) => {
     setLoading(true);
 
-    try {
-      const payload = {
-        ...data,
-        images: [data.imageUrl], // Backend expects array of strings
-      };
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    formData.append("price", data.price.toString());
+    formData.append("categoryId", data.categoryId);
+    formData.append("brandId", data.brandId);
 
-      await api.post("/products", payload);
+    // Append image files
+    data.images.forEach((file) => {
+      formData.append("product_images", file); // Key must match backend's upload.array()
+    });
+
+    try {
+      await api.post("/products", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       toast.success("Product created successfully!");
       router.push("/products");
     } catch (error) {
@@ -157,8 +169,7 @@ export default function AddProductPage() {
                   placeholder="Select Category"
                   items={categories.map((c) => ({ value: c.id, label: c.name }))}
                   className="mb-4.5"
-                  value={watch("categoryId")}
-                  onChange={(e) => setValue("categoryId", e.target.value)}
+                  {...register("categoryId")}
                 />
                 {errors.categoryId && (
                   <p className="text-red-500 text-sm mt-1">
@@ -171,8 +182,7 @@ export default function AddProductPage() {
                   placeholder="Select Brand"
                   items={brands.map((b) => ({ value: b.id, label: b.name }))}
                   className="mb-4.5"
-                  value={watch("brandId")}
-                  onChange={(e) => setValue("brandId", e.target.value)}
+                  {...register("brandId")}
                 />
                 {errors.brandId && (
                   <p className="text-red-500 text-sm mt-1">
@@ -181,10 +191,10 @@ export default function AddProductPage() {
                 )}
                 
                  <ImageUpload
-                  label="Product Image"
-                  value={watch("imageUrl")}
-                  onChange={(url) => setValue("imageUrl", url)}
-                  error={errors.imageUrl?.message}
+                  label="Product Images"
+                  value={watch("images") || []} // watch for initial display
+                  onChange={(files) => setValue("images", files)} // Set array of File objects
+                  error={errors.images?.message as string}
                   className="mb-6"
                 />
 

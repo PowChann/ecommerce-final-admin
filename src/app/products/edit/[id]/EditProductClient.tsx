@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
+import Image from "next/image"; // Import Image component for variant images
 import { TrashIcon } from "@/assets/icons"; // Import TrashIcon
 import {
   Table,
@@ -20,8 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { VariantFormModal } from "@/components/products/VariantFormModal"; // Import VariantFormModal
+// import { VariantFormModal } from "@/components/products/VariantFormModal"; // No longer used
 import { ImageUpload } from "@/components/upload/ImageUpload"; // Import ImageUpload
+import { uploadImageRequest } from "@/services/upload/api"; // Import upload service
 
 
 const EditIcon = () => (
@@ -33,14 +35,11 @@ const EditIcon = () => (
 
 const productSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long"),
-  price: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive("Price must be a positive number")
-  ),
+  price: z.coerce.number().positive("Price must be a positive number"), // Using coerce for simplicity
   description: z.string().min(10, "Description must be at least 10 characters long"),
   categoryId: z.string().min(1, "Category is required"),
   brandId: z.string().min(1, "Brand is required"),
-  imageUrl: z.string().url("Image URL must be a valid URL").min(1, "Product image is required"),
+  images: z.array(z.string().url("Image URL must be a valid URL")).min(1, "At least one product image is required"), // Changed to array
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -49,10 +48,14 @@ interface EditProductClientProps {
     id: string;
 }
 
-export function EditProductClient({ id }: EditProductClientProps) { // Component renamed to EditProductClient
+export function EditProductClient({ id }: EditProductClientProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(true);
+  const [isUploadingImages, setIsUploadingImages] = useState(false); // New state to track image upload progress
+  
+  // Track processed files to avoid re-uploading
+  const [processedFiles, setProcessedFiles] = useState<Set<string>>(new Set());
 
   const {
     register,
@@ -62,7 +65,10 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
     watch,
     reset,
   } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as any, // Cast to any to resolve TS mismatch with Zod coerce
+    defaultValues: {
+        images: [], // Initialize as empty array
+    }
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -71,13 +77,13 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
   // Variant states
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [variantLoading, setVariantLoading] = useState(true);
-  const [isVariantFormOpen, setIsVariantFormOpen] = useState(false);
-  const [currentVariant, setCurrentVariant] = useState<ProductVariant | null>(null);
+  // const [isVariantFormOpen, setIsVariantFormOpen] = useState(false); // No longer needed
+  // const [currentVariant, setCurrentVariant] = useState<ProductVariant | null>(null); // No longer needed
 
   const fetchVariants = useCallback(async () => {
     setVariantLoading(true);
     try {
-      const variantsRes = await api.get(`/product-variants/${id}`);
+      const variantsRes = await api.get(`/product-variants/${id}`); // Reverted to match backend expectation
       const productVariants = Array.isArray(variantsRes.data) ? variantsRes.data : variantsRes.data.data || [];
       setVariants(productVariants);
     } catch (error) {
@@ -110,7 +116,9 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
             description: productData.description || "",
             categoryId: productData.categoryId || "",
             brandId: productData.brandId || "",
-            imageUrl: productData.images && productData.images.length > 0 ? productData.images[0] : "",
+            images: (productData.images || []).map(imgUrl => 
+                imgUrl.startsWith('http://') || imgUrl.startsWith('https://') ? imgUrl : `https://${imgUrl}`
+            ), // Load all images with enforced protocol
           });
         }
 
@@ -135,35 +143,85 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
     fetchData();
   }, [id, reset, router, fetchVariants]);
 
+  const handleImageChange = async (files: File[]) => {
+    // Determine which files actually need uploading (not in processedFiles yet)
+    const filesToUpload = files.filter(file => {
+      const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+      return !processedFiles.has(fileKey);
+    });
+
+    if (filesToUpload.length === 0) {
+      return;
+    }
+
+    setIsUploadingImages(true); // Start uploading indicator
+
+    const currentImages = watch("images") || [];
+    const newUrls: string[] = [...currentImages]; // Start with current images
+
+    const uploadPromises = filesToUpload.map(async (file) => {
+        const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+        const toastId = toast.loading(`Uploading ${file.name}...`);
+        try {
+            const res = await uploadImageRequest(file);
+            if (res && res.data && res.data.url) {
+                let imageUrl = res.data.url;
+                if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                    imageUrl = `https://${imageUrl}`;
+                }
+                newUrls.push(imageUrl);
+                setProcessedFiles(prev => new Set(prev).add(fileKey)); // Mark as processed
+                toast.success("Uploaded successfully", { id: toastId });
+            } else {
+                toast.error("Failed to get image URL", { id: toastId });
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to upload image", { id: toastId });
+        }
+    });
+
+    await Promise.allSettled(uploadPromises); // Wait for all uploads to finish
+    setValue("images", newUrls); // Update form with all (old + new uploaded) URLs
+    setIsUploadingImages(false); // End uploading indicator
+  };
+  
+  const handleRemoveImage = (urlToRemove: string) => {
+      const currentImages = watch("images") || [];
+      const updatedImages = currentImages.filter(url => url !== urlToRemove);
+      setValue("images", updatedImages);
+  };
+
+  const handleDeleteVariant = async (variantId: string) => { // Re-added handleDeleteVariant
+    if (!confirm("Are you sure you want to delete this variant?")) return;
+    try {
+      await api.delete(`/product-variants/${variantId}`);
+      toast.success("Variant deleted successfully!");
+      fetchVariants(); // Refresh list
+    } catch (error: any) {
+      console.error("Failed to delete variant", error);
+      toast.error(error.response?.data?.message || "Failed to delete variant.");
+    }
+  };
+
   const handleSubmitForm = async (data: ProductFormData) => {
     setLoading(true);
 
     try {
       const payload = {
         ...data,
-        images: [data.imageUrl], // Backend expects array of strings
+        images: data.images, // Now correctly uses the array of URLs
       };
 
+      console.log("Sending payload for product update:", payload); // Removed log
       await api.put(`/products/${id}`, payload);
       toast.success("Product updated successfully!");
       router.push("/products");
-    } catch (error) {
-      console.error("Failed to update product", error);
-      toast.error("Failed to update product. Please check inputs.");
+    } catch (error: any) { // Type 'any' for better error handling in logs
+      console.error("Failed to update product:", error); // Log full error object
+      toast.error(error.response?.data?.message || "Failed to update product. Please check inputs.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteVariant = async (variantId: string) => {
-    if (!confirm("Are you sure you want to delete this variant?")) return;
-    try {
-      await api.delete(`/product-variants/${variantId}`);
-      toast.success("Variant deleted successfully!");
-      fetchVariants(); // Re-fetch variants to update the list
-    } catch (error: any) {
-      console.error("Failed to delete variant", error);
-      toast.error(error.response?.data?.message || "Failed to delete variant.");
     }
   };
 
@@ -178,6 +236,8 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
     );
   }
 
+  const productPrice = watch("price"); // Get current product price
+
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
       <Breadcrumb pageName="Edit Product" />
@@ -191,7 +251,10 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
                 Product Details
               </h3>
             </div>
-            <form onSubmit={handleSubmit(handleSubmitForm)}>
+            <form onSubmit={handleSubmit(handleSubmitForm, (errors) => {
+                console.error("Form validation errors:", errors);
+                toast.error("Please correct the form errors.");
+            })}>
               <div className="p-6.5">
                 <InputGroup
                   label="Product Name"
@@ -267,19 +330,20 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
                 )}
                 
                  <ImageUpload
-                  label="Product Image"
-                  value={watch("imageUrl")}
-                  onChange={(url) => setValue("imageUrl", url)}
-                  error={errors.imageUrl?.message}
+                  label="Product Images"
+                  value={watch("images")}
+                  onChange={handleImageChange}
+                  onRemove={handleRemoveImage}
+                  error={errors.images?.message as string}
                   className="mb-6"
                 />
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || isUploadingImages} // Disable if form submitting or images uploading
                   className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90 disabled:opacity-50"
                 >
-                  {loading ? "Updating..." : "Update Product"}
+                  {loading || isUploadingImages ? "Updating..." : "Update Product"}
                 </button>
               </div>
             </form>
@@ -293,8 +357,7 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
               </h3>
               <button
                 onClick={() => {
-                  setCurrentVariant(null);
-                  setIsVariantFormOpen(true);
+                  router.push(`/product-variants/add?productId=${id}`); // Navigate to new Add Variant page
                 }}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-center font-medium text-white hover:bg-opacity-90"
               >
@@ -311,6 +374,7 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
                   <Table>
                     <TableHeader>
                       <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
+                        <TableHead>Image</TableHead>
                         <TableHead>SKU</TableHead>
                         <TableHead>Price</TableHead>
                         <TableHead>Quantity</TableHead>
@@ -321,6 +385,19 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
                     <TableBody>
                       {variants.map((variant) => (
                         <TableRow key={variant.id} className="border-[#eee] dark:border-dark-3">
+                          <TableCell>
+                            {variant.images && variant.images.length > 0 && (
+                                <div className="relative h-12 w-12 rounded-md overflow-hidden">
+                                    <Image
+                                        src={variant.images[0].startsWith('http') || variant.images[0].startsWith('/') ? variant.images[0] : `https://${variant.images[0]}`}
+                                        alt="Variant Image"
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                            )}
+                            {/* Removed console log */}
+                          </TableCell>
                           <TableCell>{variant.sku}</TableCell>
                           <TableCell>${variant.price.toLocaleString()}</TableCell>
                           <TableCell>{variant.quantity}</TableCell>
@@ -335,8 +412,7 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
                             <div className="flex items-center justify-end gap-x-3.5">
                               <button
                                 onClick={() => {
-                                  setCurrentVariant(variant);
-                                  setIsVariantFormOpen(true);
+                                  router.push(`/product-variants/${variant.id}/edit`); // Navigate to Edit Variant page
                                 }}
                                 className="hover:text-primary"
                               >
@@ -362,17 +438,6 @@ export function EditProductClient({ id }: EditProductClientProps) { // Component
           </div>
         </div>
       </div>
-
-      <VariantFormModal
-        isOpen={isVariantFormOpen}
-        onClose={() => {
-          setIsVariantFormOpen(false);
-          setCurrentVariant(null);
-        }}
-        productId={id}
-        editingVariant={currentVariant}
-        onSave={fetchVariants}
-      />
     </div>
   );
 }
