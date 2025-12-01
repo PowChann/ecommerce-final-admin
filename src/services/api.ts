@@ -18,7 +18,7 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'; 
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
   withCredentials: true, // Important for cookie-based sessions
   headers: {
     'Content-Type': 'application/json',
