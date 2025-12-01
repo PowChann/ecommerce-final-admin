@@ -3,6 +3,7 @@
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes"; // Import useTheme
 
 type PropsType = {
   data: {
@@ -17,10 +18,17 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 
 export function PaymentsOverviewChart({ data }: PropsType) {
   const isMobile = useIsMobile();
+  const { theme } = useTheme(); // Get current theme
 
   const options: ApexOptions = {
+    theme: {
+      mode: theme === 'dark' ? 'dark' : 'light', // Set theme dynamically
+    },
     legend: {
       show: false,
+      labels: {
+        colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
+      },
     },
     colors: ["#5750F1", "#0ABEF9"],
     chart: {
@@ -70,9 +78,24 @@ export function PaymentsOverviewChart({ data }: PropsType) {
     dataLabels: {
       enabled: false,
     },
+    yaxis: {
+      labels: {
+        formatter: function (value) {
+          return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        },
+        style: {
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
+        },
+      },
+    },
     tooltip: {
       marker: {
         show: true,
+      },
+      y: {
+        formatter: function (value) {
+          return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        },
       },
     },
     xaxis: {
@@ -81,6 +104,11 @@ export function PaymentsOverviewChart({ data }: PropsType) {
       },
       axisTicks: {
         show: false,
+      },
+      labels: {
+        style: {
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust X-axis label color for theme
+        },
       },
     },
   };

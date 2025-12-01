@@ -1,100 +1,67 @@
-export async function getOverviewData() {
-  // Mock data for UI development without backend
-  // Simulate a slight delay to test suspense states if needed, or return immediately
-  // await new Promise((resolve) => setTimeout(resolve, 1000));
+import api from "@/services/api";
+import { cookies } from "next/headers";
 
-  return {
-    revenue: {
-      value: 12000,
-      growthRate: 12.5,
-    },
-    totalUsers: {
-      value: 450,
-      growthRate: 5.2,
-    },
-    newUsers: {
-      value: 30,
-      growthRate: 8.1,
-    },
-    totalOrders: {
-      value: 150,
-      growthRate: 7.0,
-    },
-    topSellingProduct: {
-      name: "Smart Watch X",
-      value: 120, // number of units sold
-      growthRate: 15.0,
-    },
-  };
+export async function getOverviewData() {
+  try {
+    const cookieStore = await cookies();
+    const res = await api.get("/dashboard/overview", {
+      headers: { Cookie: cookieStore.toString() },
+    });
+    return res.data.data;
+  } catch (error) {
+    console.error("Failed to fetch overview data:", error);
+    // Return fallback data or empty structure to prevent crash
+    return {
+      revenue: { value: 0, growthRate: 0 },
+      totalUsers: { value: 0, growthRate: 0 },
+      newUsers: { value: 0, growthRate: 0 },
+      totalOrders: { value: 0, growthRate: 0 },
+      topSellingProduct: { name: "N/A", value: 0, growthRate: 0 },
+    };
+  }
 }
 
 export async function getRecentOrdersData() {
-  // Mock data for recent orders
-  return [
-    {
-      orderId: "ORD001",
-      customerName: "John Doe",
-      totalAmount: 120.50,
-      status: "Pending",
-      orderDate: "2025-11-28T10:00:00Z",
-    },
-    {
-      orderId: "ORD002",
-      customerName: "Jane Smith",
-      totalAmount: 245.00,
-      status: "Completed",
-      orderDate: "2025-11-27T14:30:00Z",
-    },
-    {
-      orderId: "ORD003",
-      customerName: "Peter Jones",
-      totalAmount: 75.99,
-      status: "Processing",
-      orderDate: "2025-11-27T11:15:00Z",
-    },
-    {
-      orderId: "ORD004",
-      customerName: "Alice Brown",
-      totalAmount: 300.00,
-      status: "Completed",
-      orderDate: "2025-11-26T09:00:00Z",
-    },
-    {
-      orderId: "ORD005",
-      customerName: "Bob White",
-      totalAmount: 50.25,
-      status: "Cancelled",
-      orderDate: "2025-11-25T16:45:00Z",
-    },
-  ];
+  try {
+    const cookieStore = await cookies();
+    const res = await api.get("/dashboard/recent-orders", { // Use dedicated endpoint
+      headers: { Cookie: cookieStore.toString() },
+    });
+    
+    const orders = Array.isArray(res.data.data) ? res.data.data : [];
+    
+    return orders.map((order: any) => ({
+      orderId: order.id,
+      customerName: order.user || "Unknown", // Backend returns user name directly
+      totalAmount: Number(order.grandTotal),
+      status: order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Unknown",
+      orderDate: order.createdAt,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch recent orders:", error);
+    return [];
+  }
 }
 
 export async function getLowStockProductsData() {
-  // Mock data for low stock products
-  return [
-    {
-      id: "PROD001",
-      name: "Smart Watch X",
-      category: "Electronics",
-      price: 199.99,
-      stock: 5,
-      image: "/images/product/product-01.png", // Placeholder image path
-    },
-    {
-      id: "PROD002",
-      name: "Wireless Earbuds Pro",
-      category: "Audio",
-      price: 89.00,
-      stock: 3,
-      image: "/images/product/product-02.png", // Placeholder image path
-    },
-    {
-      id: "PROD003",
-      name: "Portable Charger 10000mAh",
-      category: "Accessories",
-      price: 35.50,
-      stock: 7,
-      image: "/images/product/product-03.png", // Placeholder image path
-    },
-  ];
+  try {
+    const cookieStore = await cookies();
+    const res = await api.get("/dashboard/low-stock-products", { // Use dedicated endpoint
+      headers: { Cookie: cookieStore.toString() },
+    });
+    
+    const products = Array.isArray(res.data.data) ? res.data.data : [];
+    
+    return products.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category || "Uncategorized", // Backend returns category name directly
+      price: Number(p.price),
+      stock: Number(p.stock),
+      image: p.images && p.images.length > 0 ? p.images[0] : "",
+    }));
+  } catch (error) {
+    console.error("Failed to fetch low stock products:", error);
+    return [];
+  }
 }

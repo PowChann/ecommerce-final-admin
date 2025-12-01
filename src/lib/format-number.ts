@@ -9,7 +9,7 @@ export function compactFormat(value: number) {
 
 export function standardFormat(value: number) {
   return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0, // Changed to 0
     maximumFractionDigits: 2,
   });
 }

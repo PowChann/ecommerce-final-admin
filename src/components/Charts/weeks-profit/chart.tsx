@@ -2,6 +2,7 @@
 
 import type { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes"; // Import useTheme
 
 type PropsType = {
   data: {
@@ -15,7 +16,12 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 });
 
 export function WeeksProfitChart({ data }: PropsType) {
+  const { theme } = useTheme(); // Get current theme
+
   const options: ApexOptions = {
+    theme: {
+      mode: theme === 'dark' ? 'dark' : 'light', // Set theme dynamically
+    },
     colors: ["#5750F1", "#0ABEF9"],
     chart: {
       type: "bar",
@@ -26,6 +32,7 @@ export function WeeksProfitChart({ data }: PropsType) {
       zoom: {
         enabled: false,
       },
+      fontFamily: "inherit",
     },
 
     responsive: [
@@ -68,12 +75,33 @@ export function WeeksProfitChart({ data }: PropsType) {
       },
     },
 
+    yaxis: {
+      labels: {
+        formatter: (value) => value.toLocaleString('en-US'),
+        style: {
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
+        },
+      },
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val.toLocaleString('en-US');
+        }
+      }
+    },
+
     xaxis: {
       axisBorder: {
         show: false,
       },
       axisTicks: {
         show: false,
+      },
+      labels: {
+        style: {
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust X-axis label color for theme
+        },
       },
     },
     legend: {
@@ -85,6 +113,9 @@ export function WeeksProfitChart({ data }: PropsType) {
       markers: {
         size: 9,
         shape: "circle",
+      },
+      labels: {
+        colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
       },
     },
     fill: {

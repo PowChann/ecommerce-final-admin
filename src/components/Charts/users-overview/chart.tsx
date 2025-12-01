@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { type ApexOptions } from "apexcharts";
 import { type PropsWithClassName } from "@/types/props";
-import { formatNumber } from "@/lib/format-number";
+import { useTheme } from "next-themes"; // Import useTheme
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -19,7 +19,12 @@ export function UsersChart({
   chartData,
   categories,
 }: ChartProps) {
+  const { theme } = useTheme(); // Get current theme
+
   const options: ApexOptions = {
+    theme: {
+      mode: theme === 'dark' ? 'dark' : 'light', // Set theme dynamically
+    },
     legend: {
       show: true,
       position: "top",
@@ -29,6 +34,9 @@ export function UsersChart({
       fontSize: "14px",
       markers: {
         radius: 99,
+      },
+      labels: {
+        colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
       },
     },
     colors: ["#3056D3", "#80CAEE"], // Example colors
@@ -87,7 +95,7 @@ export function UsersChart({
     },
     markers: {
       size: 4,
-      colors: "#fff",
+      colors: ["#fff"],
       strokeColors: ["#3056D3", "#80CAEE"],
       strokeWidth: 3,
       strokeOpacity: 0.9,
@@ -114,7 +122,7 @@ export function UsersChart({
       },
       labels: {
         style: {
-          colors: "#616161",
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust X-axis label color for theme
           fontSize: "12px",
         },
       },
@@ -127,12 +135,19 @@ export function UsersChart({
       },
       min: 0,
       labels: {
-        formatter: (value) => formatNumber(value),
+        formatter: (value) => value.toLocaleString('en-US'),
         style: {
-          colors: "#616161",
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
           fontSize: "12px",
         },
       },
+    },
+    tooltip: {
+      y: {
+        formatter: function (value) {
+          return value.toLocaleString('en-US');
+        }
+      }
     },
   };
 
