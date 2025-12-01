@@ -14,6 +14,14 @@ export async function ProductsByTypeOverview({
     timeFrame as "monthly" | "yearly",
   );
 
+  if (!data || Object.keys(data).length === 0) {
+    return (
+      <div className={`${className} flex items-center justify-center p-8 bg-white rounded-md border border-stroke dark:bg-gray-dark dark:border-dark-3 shadow-1`}>
+        <p className="text-gray-500 dark:text-gray-400">No data available for Products by Type</p>
+      </div>
+    );
+  }
+
   const series = Object.keys(data).map((key) => {
     return {
       name: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter
@@ -21,9 +29,9 @@ export async function ProductsByTypeOverview({
     };
   });
 
-  const categories = data[Object.keys(data)[0] as keyof typeof data].map(
-    (item) => item.x,
-  );
+  // Safely access the first category's data for x-axis labels
+  const firstKey = Object.keys(data)[0] as keyof typeof data;
+  const categories = data[firstKey]?.map((item) => item.x) || [];
 
   return (
     <ProductsByTypeChart

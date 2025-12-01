@@ -1,6 +1,6 @@
 import { getRecentOrdersData } from "../../fetch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"; // Import all necessary Table components
-import dayjs from "dayjs"; // Import dayjs for date formatting
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import dayjs from "dayjs";
 
 export async function RecentOrders() {
   const recentOrders = await getRecentOrdersData();
@@ -15,7 +15,11 @@ export async function RecentOrders() {
         <Table>
           <TableHeader>
             <TableRow className="border-none bg-gray-2 dark:bg-meta-4 [&>th]:py-4 [&>th]:px-5 [&>th]:text-base [&>th]:text-black [&>th]:dark:text-white sm:[&>th]:px-7.5">
-              <TableHead className="min-w-[150px] text-left">Order ID</TableHead><TableHead className="min-w-[180px] text-left">Customer</TableHead><TableHead className="min-w-[150px] text-left">Total Amount</TableHead><TableHead className="min-w-[120px] text-left">Status</TableHead><TableHead className="min-w-[150px] text-left">Date</TableHead>
+              <TableHead className="min-w-[150px] text-left">Order ID</TableHead>
+              <TableHead className="min-w-[180px] text-left">Customer</TableHead>
+              <TableHead className="min-w-[150px] text-left">Total Amount</TableHead>
+              <TableHead className="min-w-[120px] text-left">Status</TableHead>
+              <TableHead className="min-w-[150px] text-left">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -26,16 +30,19 @@ export async function RecentOrders() {
             ) : (
               recentOrders.map((order, key) => (
                 <TableRow
-                  className={`border-stroke dark:border-strokedark ${key === recentOrders.length - 1 ? "border-none" : "border-b"} hover:bg-gray-50 dark:hover:bg-meta-4`} /* Added hover effect */
+                  className={`border-stroke dark:border-strokedark ${key === recentOrders.length - 1 ? "border-none" : "border-b"} hover:bg-gray-50 dark:hover:bg-meta-4`}
                   key={key}
                 >
-                  <TableCell className="min-w-[150px] text-left"> {/* Adjusted min-w */}
-                    <p className="text-black dark:text-white">#{order.orderId.slice(0, 8)}</p> {/* Rút gọn Order ID */}
-                  </TableCell><TableCell className="min-w-[180px] text-left"> {/* Adjusted min-w */}
+                  <TableCell className="min-w-[150px] text-left">
+                    <p className="text-black dark:text-white">#{order.orderId.slice(0, 8)}</p>
+                  </TableCell>
+                  <TableCell className="min-w-[180px] text-left">
                     <p className="text-black dark:text-white">{order.customerName}</p>
-                  </TableCell><TableCell className="min-w-[150px] text-left"> {/* Adjusted min-w */}
-                    <p className="text-black dark:text-white">${order.totalAmount.toFixed(2)}</p>
-                  </TableCell><TableCell className="min-w-[120px] text-left"> {/* Adjusted min-w */}
+                  </TableCell>
+                  <TableCell className="min-w-[150px] text-left">
+                    <p className="text-black dark:text-white">${order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                  </TableCell>
+                  <TableCell className="min-w-[120px] text-left">
                     <p className={`inline-flex rounded-full bg-opacity-10 py-1 px-3 text-sm font-medium ${
                       order.status === 'Pending' ? 'bg-warning text-warning' :
                       order.status === 'Completed' ? 'bg-success text-success' :
@@ -43,8 +50,9 @@ export async function RecentOrders() {
                     }`}>
                       {order.status}
                     </p>
-                  </TableCell><TableCell className="min-w-[150px] text-left"> {/* Adjusted min-w */}
-                    <p className="text-black dark:text-white">{dayjs(order.orderDate).format("MMM DD, YYYY")}</p> {/* Định dạng Date */}
+                  </TableCell>
+                  <TableCell className="min-w-[150px] text-left">
+                    <p className="text-black dark:text-white">{dayjs(order.orderDate).format("MMM DD, YYYY")}</p>
                   </TableCell>
                 </TableRow>
               ))

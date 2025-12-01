@@ -34,7 +34,7 @@ export function OverviewCard({ label, data, Icon }: PropsType) {
           )}
         >
           <dt className="flex items-center gap-1.5">
-            {data.growthRate}%
+            {Number(data.growthRate).toFixed(2)}%
             {isDecreasing ? (
               <ArrowDownIcon aria-hidden />
             ) : (
@@ -44,7 +44,7 @@ export function OverviewCard({ label, data, Icon }: PropsType) {
 
           <dd className="sr-only">
             {label} {isDecreasing ? "Decreased" : "Increased"} by{" "}
-            {data.growthRate}%
+            {Number(data.growthRate).toFixed(2)}%
           </dd>
         </dl>
       </div>

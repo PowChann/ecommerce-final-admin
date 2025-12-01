@@ -88,7 +88,7 @@ export function PeriodPicker<TItem extends string>({
 
                   <ul>
 
-                    {(items || ["daily", "weekly", "monthly", "quarterly", "yearly", "custom"]).map((item) => (
+                    {(items || ["daily", "weekly", "monthly", "quarterly", "yearly"]).map((item) => (
 
                       <li key={item}>              <button
 

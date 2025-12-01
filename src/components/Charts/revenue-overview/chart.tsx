@@ -1,9 +1,9 @@
 "use client";
 
+import type { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
-import { type ApexOptions } from "apexcharts";
 import { type PropsWithClassName } from "@/types/props";
-import { formatNumber } from "@/lib/format-number";
+import { useTheme } from "next-themes"; // Import useTheme
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -19,7 +19,12 @@ export function RevenueChart({
   chartData,
   categories,
 }: ChartProps) {
+  const { theme } = useTheme(); // Get current theme
+
   const options: ApexOptions = {
+    theme: {
+      mode: theme === 'dark' ? 'dark' : 'light', // Set theme dynamically
+    },
     legend: {
       show: true,
       position: "top",
@@ -27,8 +32,9 @@ export function RevenueChart({
       fontFamily: "Satoshi",
       fontWeight: 500,
       fontSize: "14px",
-      markers: {
-        radius: 99,
+      markers: {},
+      labels: {
+        colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
       },
     },
     colors: ["#2CD673"], // Example color for revenue
@@ -87,7 +93,7 @@ export function RevenueChart({
     },
     markers: {
       size: 4,
-      colors: "#fff",
+      colors: ["#fff"],
       strokeColors: ["#2CD673"],
       strokeWidth: 3,
       strokeOpacity: 0.9,
@@ -95,7 +101,6 @@ export function RevenueChart({
       fillOpacity: 1,
       discrete: [],
       shape: "circle",
-      radius: 2,
       offsetX: 0,
       offsetY: 0,
       hover: {
@@ -114,7 +119,7 @@ export function RevenueChart({
       },
       labels: {
         style: {
-          colors: "#616161",
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust X-axis label color for theme
           fontSize: "12px",
         },
       },
@@ -127,12 +132,19 @@ export function RevenueChart({
       },
       min: 0,
       labels: {
-        formatter: (value) => "$" + formatNumber(value), // Format as currency
+        formatter: (value) => value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
         style: {
-          colors: "#616161",
+          colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
           fontSize: "12px",
         },
       },
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+      }
     },
   };
 

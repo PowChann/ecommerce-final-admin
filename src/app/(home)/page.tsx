@@ -28,13 +28,21 @@ export default async function Home({ searchParams }: PropsType) {
 
   return (
     <>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-title-md2 font-semibold text-black dark:text-white">
+          Dashboard Overview
+        </h2>
+        <div className="w-full sm:w-auto">
+          <PeriodPicker />
+        </div>
+      </div>
+
       <Suspense fallback={<OverviewCardsSkeleton />}>
         <OverviewCardsGroup />
       </Suspense>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 md:mt-8 2xl:mt-10">
         <h2 className="mb-4 text-xl font-semibold">Quick Navigation</h2>
-        <PeriodPicker />
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-7.5">
