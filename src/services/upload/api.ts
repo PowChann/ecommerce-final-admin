@@ -1,39 +1,38 @@
 import axios from "axios";
 
-// Định nghĩa kiểu dữ liệu trả về dựa trên JSON mẫu của bạn
+// Định nghĩa kiểu dữ liệu trả về cho upload single file
 export interface UploadData {
-  userId: string;
+  userId?: string; // Có thể có hoặc không tùy context
   url: string;
-  key: string;
-  mimetype: string;
-  size: number;
+  key?: string;
+  mimetype?: string;
+  size?: number;
 }
 
 export interface UploadResponse {
-  status: string;
-  message: string;
+  status?: string;
+  message?: string;
   data: UploadData;
 }
 
 /**
- * Upload ảnh lên server
+ * Upload một ảnh duy nhất lên server (dùng cho các tính năng như Profile)
  * @param file - File object từ thẻ input (e.target.files[0])
+ * @returns Promise<UploadResponse>
  */
 export const uploadImageRequest = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
-  // 'file' là tên field phổ biến mà backend thường nhận (như multer).
-  // Nếu backend của bạn yêu cầu tên khác (vd: 'image'), hãy sửa dòng dưới:
+  // 'image' là tên field mà backend thường nhận cho single file upload
   formData.append("image", file);
 
   const response = await axios.post<UploadResponse>(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/upload`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/upload`, // Gửi đến endpoint upload chung
     formData,
     {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      // Quan trọng: Gửi kèm cookie/session nếu API cần xác thực người dùng upload
-      withCredentials: true, 
+      withCredentials: true,
     }
   );
 
