@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { type HTMLInputTypeAttribute, useId } from "react";
+import { type HTMLInputTypeAttribute, useId, forwardRef } from "react";
 
 type InputGroupProps = {
   className?: string;
@@ -11,72 +11,81 @@ type InputGroupProps = {
   disabled?: boolean;
   active?: boolean;
   handleChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  value?: string;
+  value?: string | number; // Allow number for valueAsNumber
   name?: string;
   icon?: React.ReactNode;
   iconPosition?: "left" | "right";
   height?: "sm" | "default";
-  defaultValue?: string;
-};
+  defaultValue?: string | number;
+} & React.InputHTMLAttributes<HTMLInputElement>; // Extend standard input props
 
-const InputGroup: React.FC<InputGroupProps> = ({
-  className,
-  label,
-  type,
-  placeholder,
-  required,
-  disabled,
-  active,
-  handleChange,
-  icon,
-  ...props
-}) => {
-  const id = useId();
+const InputGroup = forwardRef<HTMLInputElement, InputGroupProps>(
+  (
+    {
+      className,
+      label,
+      type,
+      placeholder,
+      required,
+      disabled,
+      active,
+      handleChange,
+      icon,
+      fileStyleVariant,
+      iconPosition,
+      height,
+      ...props
+    },
+    ref
+  ) => {
+    const id = useId();
 
-  return (
-    <div className={className}>
-      <label
-        htmlFor={id}
-        className="text-body-sm font-medium text-dark dark:text-white"
-      >
-        {label}
-        {required && <span className="ml-1 select-none text-red">*</span>}
-      </label>
+    return (
+      <div className={className}>
+        <label
+          htmlFor={id}
+          className="text-body-sm font-medium text-dark dark:text-white"
+        >
+          {label}
+          {required && <span className="ml-1 select-none text-red">*</span>}
+        </label>
 
-      <div
-        className={cn(
-          "relative mt-3 [&_svg]:absolute [&_svg]:top-1/2 [&_svg]:-translate-y-1/2",
-          props.iconPosition === "left"
-            ? "[&_svg]:left-4.5"
-            : "[&_svg]:right-4.5",
-        )}
-      >
-        <input
-          id={id}
-          type={type}
-          name={props.name}
-          placeholder={placeholder}
-          onChange={handleChange}
-          value={props.value}
-          defaultValue={props.defaultValue}
+        <div
           className={cn(
-            "w-full rounded-lg border-[1.5px] border-stroke bg-transparent outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 data-[active=true]:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary dark:disabled:bg-dark dark:data-[active=true]:border-primary",
-            type === "file"
-              ? getFileStyles(props.fileStyleVariant!)
-              : "px-5.5 py-3 text-dark placeholder:text-dark-6 dark:text-white",
-            props.iconPosition === "left" && "pl-12.5",
-            props.height === "sm" && "py-2.5",
+            "relative mt-3 [&_svg]:absolute [&_svg]:top-1/2 [&_svg]:-translate-y-1/2",
+            iconPosition === "left"
+              ? "[&_svg]:left-4.5"
+              : "[&_svg]:right-4.5",
           )}
-          required={required}
-          disabled={disabled}
-          data-active={active}
-        />
+        >
+          <input
+            ref={ref} // Pass ref here
+            id={id}
+            type={type}
+            placeholder={placeholder}
+            className={cn(
+              "w-full rounded-lg border-[1.5px] border-stroke bg-transparent outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 data-[active=true]:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary dark:disabled:bg-dark dark:data-[active=true]:border-primary",
+              type === "file"
+                ? getFileStyles(fileStyleVariant!)
+                : "px-5.5 py-3 text-dark placeholder:text-dark-6 dark:text-white",
+              iconPosition === "left" && "pl-12.5",
+              height === "sm" && "py-2.5",
+            )}
+            required={required}
+            disabled={disabled}
+            data-active={active}
+            onChange={handleChange} // Handle custom change if provided
+            {...props} // Spread rest of props (including hook form's onChange, onBlur, name)
+          />
 
-        {icon}
+          {icon}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+InputGroup.displayName = "InputGroup"; // Good practice for forwardRef
 
 export default InputGroup;
 

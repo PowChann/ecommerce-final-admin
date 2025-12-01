@@ -19,6 +19,7 @@ interface VariantFormModalProps {
   productId: string;
   editingVariant: ProductVariant | null;
   onSave: () => void; // Callback to refresh variants list
+  productPrice?: number; // New prop: main product's price
 }
 
 const variantSchema = z.object({
@@ -50,6 +51,7 @@ export function VariantFormModal({
   productId,
   editingVariant,
   onSave,
+  productPrice, // Destructure new prop
 }: VariantFormModalProps) {
   const [loading, setLoading] = useState(false);
   const modalRef = useClickOutside<HTMLDivElement>(onClose);
@@ -66,7 +68,7 @@ export function VariantFormModal({
     resolver: zodResolver(variantSchema),
     defaultValues: {
       sku: "",
-      price: 0,
+      price: productPrice || 0, // Use productPrice as default
       quantity: 0,
       image: "",
       // attributes will be managed separately
@@ -91,7 +93,7 @@ export function VariantFormModal({
       } else {
         reset({
             sku: "",
-            price: 0,
+            price: productPrice || 0, // Use productPrice as default
             quantity: 0,
             image: "",
             // attributes are managed by attributeList state
@@ -99,7 +101,7 @@ export function VariantFormModal({
         setAttributeList([]);
       }
     }
-  }, [isOpen, editingVariant, reset]);
+  }, [isOpen, editingVariant, reset, productPrice]); // Add productPrice to dependency array
 
   const onSubmit = async (data: VariantFormData) => {
     setLoading(true);

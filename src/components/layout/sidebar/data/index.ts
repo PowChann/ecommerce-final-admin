@@ -62,12 +62,6 @@ export const NAV_DATA = [
         icon: Icons.Alphabet,
         items: [],
       },
-      {
-        title: "Product Variants",
-        url: "/product-variants",
-        icon: Icons.FourCircle,
-        items: [],
-      },
     ],
   },
   {
