@@ -3,12 +3,12 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { VariantForm } from "@/components/products/VariantForm";
 import Breadcrumb from "@/components/ui/breadcrumb";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import api from "@/services/api";
 import toast from "react-hot-toast";
 import { Product } from "@/types/backend";
 
-export default function AddProductVariantPage() {
+function AddProductVariantContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
@@ -82,5 +82,13 @@ export default function AddProductVariantPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AddProductVariantPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <AddProductVariantContent />
+    </Suspense>
   );
 }

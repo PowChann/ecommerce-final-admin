@@ -33,7 +33,7 @@ export function ProfitChart({
       fontWeight: 500,
       fontSize: "14px",
       markers: {
-        radius: 99,
+        // radius: 99,
       },
       labels: {
         colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
@@ -93,19 +93,19 @@ export function ProfitChart({
     dataLabels: {
       enabled: false,
     },
-    markers: {
-      size: 4,
-      colors: ["#fff"],
-      strokeColors: ["#3BA0FF"],
-      strokeWidth: 3,
-      strokeOpacity: 0.9,
-      strokeDashArray: 0,
-      fillOpacity: 1,
-      discrete: [],
-      shape: "circle",
-      radius: 2,
-      offsetX: 0,
-      offsetY: 0,
+      markers: {
+        size: 4,
+        colors: ["#fff"],
+        strokeColors: ["#3056D3", "#80CAEE"],
+        strokeWidth: 3,
+        strokeOpacity: 0.9,
+        strokeDashArray: 0,
+        fillOpacity: 1,
+        discrete: [],
+        shape: "circle",
+        // radius: 2,
+        offsetX: 0,
+        offsetY: 0,
       hover: {
         size: undefined,
         sizeOffset: 5,

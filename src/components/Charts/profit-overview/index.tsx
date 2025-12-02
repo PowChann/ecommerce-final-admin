@@ -17,11 +17,11 @@ export async function ProfitOverview({
   const chartData = [
     {
       name: "Profit",
-      data: profit.map((item) => item.y),
+      data: profit.map((item: any) => item.y),
     },
   ];
 
-  const categories = profit.map((item) => item.x);
+  const categories = profit.map((item: any) => item.x);
 
   return (
     <ProfitChart

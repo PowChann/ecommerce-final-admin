@@ -1,5 +1,3 @@
-import { ArrowDownIcon, ArrowUpIcon } from "@/assets/icons";
-import { cn } from "@/lib/utils";
 import type { JSX, SVGProps } from "react";
 
 type PropsType = {
@@ -12,8 +10,6 @@ type PropsType = {
 };
 
 export function OverviewCard({ label, data, Icon }: PropsType) {
-  const isDecreasing = data.growthRate < 0;
-
   return (
     <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark">
       <Icon />
@@ -25,27 +21,6 @@ export function OverviewCard({ label, data, Icon }: PropsType) {
           </dt>
 
           <dd className="text-sm font-medium text-dark-6">{label}</dd>
-        </dl>
-
-        <dl
-          className={cn(
-            "text-sm font-medium",
-            isDecreasing ? "text-red" : "text-green",
-          )}
-        >
-          <dt className="flex items-center gap-1.5">
-            {Number(data.growthRate).toFixed(2)}%
-            {isDecreasing ? (
-              <ArrowDownIcon aria-hidden />
-            ) : (
-              <ArrowUpIcon aria-hidden />
-            )}
-          </dt>
-
-          <dd className="sr-only">
-            {label} {isDecreasing ? "Decreased" : "Increased"} by{" "}
-            {Number(data.growthRate).toFixed(2)}%
-          </dd>
         </dl>
       </div>
     </div>

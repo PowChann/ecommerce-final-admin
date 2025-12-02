@@ -1,4 +1,4 @@
-import { getLowStockProductsData } from "../../fetch";
+import { getLowStockProductsData } from "@/services/dashboard/api";
 import Image from "next/image";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 

@@ -1,8 +1,7 @@
 "use client";
 
 import Breadcrumb from "@/components/ui/breadcrumb";
-import { Select } from "@/components/form-elements/select";
-import { PeriodPicker } from "@/components/period-picker"; // Import PeriodPicker
+import { PeriodPicker } from "@/components/period-picker";
 import {
   Table,
   TableBody,
@@ -15,10 +14,10 @@ import api from "@/services/api";
 import { Order } from "@/types/backend";
 import dayjs from "dayjs";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import toast from "react-hot-toast"; // Import toast
-import { useSearchParams } from "next/navigation"; // Import useSearchParams
-import { extractTimeFrame, getDateRangeFromTimeFrame } from "@/lib/timeframe-extractor"; // Import date range utilities
+import { useEffect, useState, Suspense } from "react"; // Import Suspense
+import toast from "react-hot-toast";
+import { useSearchParams } from "next/navigation";
+import { extractTimeFrame, getDateRangeFromTimeFrame } from "@/lib/timeframe-extractor";
 
 // Placeholder Icon
 const EyeIcon = () => (
@@ -35,7 +34,7 @@ const ORDER_STATUSES = [
   { value: "completed", label: "Completed" },
 ];
 
-export default function OrdersPage() {
+function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -66,11 +65,11 @@ export default function OrdersPage() {
       } else {
          setOrders([]);
          setTotalPages(1);
-         toast.error("Invalid API response format for orders.");
+         // toast.error("Invalid API response format for orders."); // Suppress on init
       }
     } catch (error: any) {
       console.error("Failed to fetch orders", error);
-      toast.error(error.response?.data?.message || "Failed to fetch orders.");
+      // toast.error(error.response?.data?.message || "Failed to fetch orders.");
       setOrders([]);
       setTotalPages(1);
     } finally {
@@ -80,7 +79,8 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [page, selectedTimeFrame]); // Re-fetch orders when page or time frame changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, selectedTimeFrame]); 
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
@@ -138,7 +138,6 @@ export default function OrdersPage() {
                     </TableCell>
                     <TableCell>${order.grandTotal.toLocaleString()}</TableCell>
                     <TableCell>
-                      {/* Inline Status Changer */}
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
@@ -188,5 +187,13 @@ export default function OrdersPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-4">Loading orders...</div>}>
+      <OrdersContent />
+    </Suspense>
   );
 }

@@ -22,9 +22,7 @@ interface UserEditModalProps {
 const userEditSchema = z.object({
   name: z.string().min(3, "User name must be at least 3 characters long").optional(),
   email: z.string().email("Invalid email address").optional(),
-  role: z.enum(["user", "admin", "seller"], {
-    errorMap: () => ({ message: "Invalid role selected" }),
-  }),
+  role: z.enum(["user", "admin", "seller"]),
 });
 
 type UserEditFormData = z.infer<typeof userEditSchema>;

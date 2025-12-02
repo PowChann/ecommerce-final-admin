@@ -19,9 +19,11 @@ export interface Product {
   brandId: string;
   categoryId: string;
   createdAt: string;
+  updatedAt?: string;
   brand?: Brand;
   category?: Category;
   variants?: ProductVariant[];
+  productTags?: any[];
 }
 
 export interface ProductVariant {
@@ -32,6 +34,8 @@ export interface ProductVariant {
   quantity: number;
   images?: string[]; // Changed from image?: string to images?: string[]
   attributes: Record<string, any>; // JSON
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Category {
@@ -48,11 +52,22 @@ export interface Order {
   id: string;
   userId: string;
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'completed';
-  shippingAddress: string; // Or object depending on implementation
+  shippingAddress: string | any; // Or specific Address interface
   grandTotal: number;
   createdAt: string;
+  updatedAt?: string;
   items?: OrderItem[];
   user?: User;
+  
+  // Extended fields
+  discountId?: string | null;
+  discountAmount: number;
+  shippingFee: number;
+  tax: number;
+  subtotal: number;
+  pointUsed?: number;
+  pointEarned?: number;
+  statusHistory?: any[];
 }
 
 export interface OrderItem {
@@ -62,6 +77,13 @@ export interface OrderItem {
   quantity: number;
   price: number;
   product?: Product;
+  
+  // Extended fields
+  productName: string;
+  unitPrice: number;
+  subTotal: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DashboardStats {

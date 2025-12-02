@@ -33,7 +33,7 @@ export function UsersChart({
       fontWeight: 500,
       fontSize: "14px",
       markers: {
-        radius: 99,
+        // radius: 99,
       },
       labels: {
         colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
@@ -103,7 +103,7 @@ export function UsersChart({
       fillOpacity: 1,
       discrete: [],
       shape: "circle",
-      radius: 2,
+      // radius: 2,
       offsetX: 0,
       offsetY: 0,
       hover: {

@@ -81,7 +81,7 @@ export function ProductsByTypeChart({
       fontWeight: 500,
       fontSize: "14px",
       markers: {
-        radius: 99,
+        // radius: 99,
       },
       labels: {
         colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme

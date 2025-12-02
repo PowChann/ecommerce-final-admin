@@ -17,15 +17,15 @@ export async function UsersOverview({
   const chartData = [
     {
       name: "Total Users",
-      data: totalUsers.map((item) => item.y),
+      data: totalUsers.map((item: any) => item.y),
     },
     {
       name: "New Users",
-      data: newUsers.map((item) => item.y),
+      data: newUsers.map((item: any) => item.y),
     },
   ];
 
-  const categories = totalUsers.map((item) => item.x);
+  const categories = totalUsers.map((item: any) => item.x);
 
   return (
     <UsersChart

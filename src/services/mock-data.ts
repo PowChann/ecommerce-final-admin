@@ -29,7 +29,7 @@ export const MOCK_PRODUCT_VARIANTS: ProductVariant[] = [
         sku: "SMARTPHONEX-BLU-64GB",
         price: 999,
         quantity: 100,
-        image: "/images/placeholder.svg",
+        images: ["/images/placeholder.svg"],
         attributes: { color: "Blue", storage: "64GB" },
         createdAt: "2023-02-01T10:00:00Z",
         updatedAt: "2023-02-01T10:00:00Z",
@@ -40,7 +40,7 @@ export const MOCK_PRODUCT_VARIANTS: ProductVariant[] = [
         sku: "SMARTPHONEX-BLK-128GB",
         price: 1099,
         quantity: 50,
-        image: "/images/placeholder.svg",
+        images: ["/images/placeholder.svg"],
         attributes: { color: "Black", storage: "128GB" },
         createdAt: "2023-02-01T10:00:00Z",
         updatedAt: "2023-02-01T10:00:00Z",
@@ -95,10 +95,10 @@ export const MOCK_ORDER_DETAILS: Order = {
   pointEarned: 24,
   createdAt: "2023-03-01T10:00:00Z",
   updatedAt: "2023-03-01T10:00:00Z",
-  user: { id: "u2", email: "bob@example.com", name: "Bob Buyer" },
+  user: { id: "u2", email: "bob@example.com", name: "Bob Buyer", role: "user", banned: false, loyaltyPoints: 50 },
   items: [
     { 
-      id: "oi1", orderId: "o1", productId: MOCK_PRODUCT_DETAILS.id, productName: MOCK_PRODUCT_DETAILS.name, quantity: 1, unitPrice: 999, subTotal: 999,
+      id: "oi1", orderId: "o1", productId: MOCK_PRODUCT_DETAILS.id, productName: MOCK_PRODUCT_DETAILS.name, quantity: 1, price: 999, unitPrice: 999, subTotal: 999,
       createdAt: "2023-03-01T10:00:00Z", updatedAt: "2023-03-01T10:00:00Z",
       product: MOCK_PRODUCT_DETAILS
     }
@@ -170,10 +170,14 @@ export const MOCK_ORDERS: Order[] = [
     status: "pending",
     shippingAddress: "456 Elm St",
     grandTotal: 89,
+    subtotal: 89,
+    tax: 0,
+    shippingFee: 0,
+    discountAmount: 0,
     createdAt: "2023-03-02T11:00:00Z",
     user: MOCK_USERS[2],
     items: [
-      { id: "oi2", orderId: "o2", productId: "p2", quantity: 1, price: 89, product: MOCK_PRODUCTS[1] }
+      { id: "oi2", orderId: "o2", productId: "p2", quantity: 1, price: 89, productName: "Designer Jeans", unitPrice: 89, subTotal: 89, product: MOCK_PRODUCTS[1] }
     ]
   },
   {
@@ -182,11 +186,15 @@ export const MOCK_ORDERS: Order[] = [
     status: "shipped",
     shippingAddress: "789 Oak St",
     grandTotal: 1609,
+    subtotal: 1609,
+    tax: 0,
+    shippingFee: 0,
+    discountAmount: 0,
     createdAt: "2023-03-03T12:00:00Z",
     user: MOCK_USERS[4],
     items: [
-      { id: "oi3", orderId: "o3", productId: "p3", quantity: 1, price: 1499, product: MOCK_PRODUCTS[2] },
-      { id: "oi4", orderId: "o3", productId: "p5", quantity: 1, price: 110, product: MOCK_PRODUCTS[4] }
+      { id: "oi3", orderId: "o3", productId: "p3", quantity: 1, price: 1499, productName: "Laptop Pro", unitPrice: 1499, subTotal: 1499, product: MOCK_PRODUCTS[2] },
+      { id: "oi4", orderId: "o3", productId: "p5", quantity: 1, price: 110, productName: "Running Shoes", unitPrice: 110, subTotal: 110, product: MOCK_PRODUCTS[4] }
     ]
   },
 ];

@@ -17,15 +17,15 @@ export async function OrdersOverview({
   const chartData = [
     {
       name: "Total Orders",
-      data: totalOrders.map((item) => item.y),
+      data: totalOrders.map((item: any) => item.y),
     },
     {
       name: "New Orders",
-      data: newOrders.map((item) => item.y),
+      data: newOrders.map((item: any) => item.y),
     },
   ];
 
-  const categories = totalOrders.map((item) => item.x);
+  const categories = totalOrders.map((item: any) => item.x);
 
   return (
     <OrdersChart

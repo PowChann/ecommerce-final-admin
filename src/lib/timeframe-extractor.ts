@@ -2,10 +2,12 @@ import dayjs from "dayjs";
 import isToday from "dayjs/plugin/isToday";
 import isYesterday from "dayjs/plugin/isYesterday";
 import weekOfYear from "dayjs/plugin/weekOfYear";
+import quarterOfYear from "dayjs/plugin/quarterOfYear";
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
 dayjs.extend(weekOfYear);
+dayjs.extend(quarterOfYear);
 
 export function extractTimeFrame(selectedTimeFrame: string | undefined) {
   return selectedTimeFrame;

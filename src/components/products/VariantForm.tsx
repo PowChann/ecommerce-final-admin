@@ -57,7 +57,7 @@ export function VariantForm({
     setValue,
     watch,
   } = useForm<VariantFormData>({
-    resolver: zodResolver(variantSchema),
+    resolver: zodResolver(variantSchema) as any,
     defaultValues: {
       sku: "",
       price: productPrice || 0,
@@ -271,6 +271,7 @@ export function VariantForm({
             {attributeList.map((attr, index) => (
               <div key={index} className="flex gap-2">
                 <InputGroup
+                  label=""
                   type="text"
                   placeholder="Key (e.g., Color)"
                   value={attr.key}
@@ -282,6 +283,7 @@ export function VariantForm({
                   className="flex-1"
                 />
                 <InputGroup
+                  label=""
                   type="text"
                   placeholder="Value (e.g., Red)"
                   value={attr.value}

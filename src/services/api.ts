@@ -61,6 +61,21 @@ api.interceptors.response.use(
         }
         // ... add similar logic for other detailed GET endpoints if needed
 
+        // Dashboard Overview Mock
+        if (url.includes('/dashboard/overview')) {
+            return Promise.resolve({
+                data: {
+                    data: {
+                        revenue: { value: MOCK_STATS.totalRevenue, growthRate: 0 },
+                        totalUsers: { value: MOCK_STATS.totalUsers, growthRate: 0 },
+                        newUsers: { value: MOCK_STATS.totalUsers, growthRate: 0 }, // Same as totalUsers per request
+                        totalOrders: { value: MOCK_STATS.totalOrders, growthRate: 0 },
+                        topSellingProduct: { name: "Smartphone X", value: 150, growthRate: 0 }
+                    }
+                }
+            });
+        }
+
         // Existing list mocks
         if (url.includes('/users')) mockData = MOCK_USERS;
         else if (url.includes('/products')) mockData = MOCK_PRODUCTS;

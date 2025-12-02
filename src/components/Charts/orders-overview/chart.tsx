@@ -33,7 +33,7 @@ export function OrdersChart({
       fontWeight: 500,
       fontSize: "14px",
       markers: {
-        radius: 99,
+        // radius: 99, // Removed due to type error
       },
       labels: {
         colors: theme === 'dark' ? '#fff' : '#333', // Adjust legend color for theme
@@ -103,7 +103,7 @@ export function OrdersChart({
       fillOpacity: 1,
       discrete: [],
       shape: "circle",
-      radius: 2,
+      // radius: 2, // Removed
       offsetX: 0,
       offsetY: 0,
       hover: {

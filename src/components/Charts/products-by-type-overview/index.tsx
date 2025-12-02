@@ -25,13 +25,13 @@ export async function ProductsByTypeOverview({
   const series = Object.keys(data).map((key) => {
     return {
       name: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter
-      data: data[key as keyof typeof data].map((item) => item.y),
+      data: data[key as keyof typeof data].map((item: any) => item.y),
     };
   });
 
   // Safely access the first category's data for x-axis labels
   const firstKey = Object.keys(data)[0] as keyof typeof data;
-  const categories = data[firstKey]?.map((item) => item.x) || [];
+  const categories = data[firstKey]?.map((item: any) => item.x) || [];
 
   return (
     <ProductsByTypeChart

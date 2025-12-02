@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import InputGroup from "../form-elements/InputGroup";
 import { ProductVariant } from "@/types/backend";
 import api from "@/services/api";
+import { uploadImageRequest } from "@/services/upload/api";
 import { ImageUpload } from "@/components/upload/ImageUpload"; // Import ImageUpload
 
 interface VariantFormModalProps {
@@ -65,7 +66,7 @@ export function VariantFormModal({
     setValue,
     watch,
   } = useForm<VariantFormData>({
-    resolver: zodResolver(variantSchema),
+    resolver: zodResolver(variantSchema) as any,
     defaultValues: {
       sku: "",
       price: productPrice || 0, // Use productPrice as default
@@ -82,7 +83,7 @@ export function VariantFormModal({
           sku: editingVariant.sku,
           price: editingVariant.price,
           quantity: editingVariant.quantity,
-          image: editingVariant.image || "",
+          image: editingVariant.images?.[0] || "",
           // attributes are managed by attributeList state
         });
         const attributesArray = Object.entries(editingVariant.attributes || {}).map(([key, value]) => ({
@@ -101,7 +102,25 @@ export function VariantFormModal({
         setAttributeList([]);
       }
     }
-  }, [isOpen, editingVariant, reset, productPrice]); // Add productPrice to dependency array
+  }, [isOpen, editingVariant, reset, productPrice]);
+
+  const handleImageChange = async (files: File[]) => {
+    if (files.length === 0) return;
+    const file = files[0]; // Only take the first one for single image variant
+    const toastId = toast.loading("Uploading...");
+    try {
+      const res = await uploadImageRequest(file);
+      if (res && res.data && res.data.url) {
+        setValue("image", res.data.url);
+        toast.success("Uploaded successfully", { id: toastId });
+      } else {
+        toast.error("Failed to upload", { id: toastId });
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image", { id: toastId });
+    }
+  };
 
   const onSubmit = async (data: VariantFormData) => {
     setLoading(true);
@@ -193,8 +212,8 @@ export function VariantFormModal({
 
           <ImageUpload
             label="Variant Image"
-            value={watch("image")}
-            onChange={(url) => setValue("image", url)}
+            value={watch("image") ? [watch("image")] : []}
+            onChange={handleImageChange}
             error={errors.image?.message}
             className="mb-4.5"
           />
@@ -207,6 +226,7 @@ export function VariantFormModal({
               {attributeList.map((attr, index) => (
                 <div key={index} className="flex gap-2">
                   <InputGroup
+                    label=""
                     type="text"
                     placeholder="Key (e.g., Color)"
                     value={attr.key}
@@ -218,6 +238,7 @@ export function VariantFormModal({
                     className="flex-1"
                   />
                   <InputGroup
+                    label=""
                     type="text"
                     placeholder="Value (e.g., Red)"
                     value={attr.value}

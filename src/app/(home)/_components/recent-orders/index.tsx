@@ -1,4 +1,4 @@
-import { getRecentOrdersData } from "../../fetch";
+import { getRecentOrdersData } from "@/services/dashboard/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import dayjs from "dayjs";
 

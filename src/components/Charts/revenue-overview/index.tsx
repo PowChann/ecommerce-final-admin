@@ -17,11 +17,11 @@ export async function RevenueOverview({
   const chartData = [
     {
       name: "Revenue",
-      data: revenue.map((item) => item.y),
+      data: revenue.map((item: any) => item.y),
     },
   ];
 
-  const categories = revenue.map((item) => item.x);
+  const categories = revenue.map((item: any) => item.x);
 
   return (
     <RevenueChart
