@@ -6,39 +6,35 @@ import toast from "react-hot-toast";
 
 interface ImageUploadProps {
   label: string;
-  value: string[]; // Still expects an array of URLs for initial display
-  onChange: (files: File[]) => void; // Now returns selected File objects
-  onRemove?: (url: string) => void; // Callback when an external URL is removed
+  // 'value' is now exclusively for external (uploaded) URLs
+  value: string[];
+  // 'initialFiles' is for File objects that are not yet uploaded (e.g., in AddProduct form)
+  // For product edit, this might be null or empty unless new files are being added
+  // onChange returns ALL File objects (newly selected + existing local ones)
+  onChange: (files: File[]) => void;
+  // onRemove is for EXTERNAL URLs (those in 'value')
+  onRemove?: (url: string) => void;
   error?: string;
   className?: string;
+  uploading?: boolean; // New prop for uploading state
 }
 
-export function ImageUpload({ label, value, onChange, onRemove, error, className }: ImageUploadProps) {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>(value || []);
-  const [uploading, setUploading] = useState(false); // Keep uploading state for future use if needed, but not used for direct upload
+export function ImageUpload({ label, value, onChange, onRemove, error, className, uploading }: ImageUploadProps) {
+  // internal state to manage files selected by the user, and their blob URLs
+  const [localFiles, setLocalFiles] = useState<File[]>([]);
+  const [localBlobUrls, setLocalBlobUrls] = useState<string[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Combine external URLs and local blob URLs for display
+  const allPreviewUrls = [...value, ...localBlobUrls];
+
+  // Effect to clean up blob URLs when component unmounts or local files change
   useEffect(() => {
-    // If external 'value' (URLs from existing product) changes, update previews
-    // We update if the lengths don't match or if the content is different
-    // But we must be careful not to kill local previews of newly added files.
-    // A safe bet: Sync if we have NO selected files (purely viewing/editing existing).
-    // OR, better: merge 'value' (external) + local previews.
-    // For now, let's stick to the logic: if value changes, and we assume value contains ALL valid images (including newly uploaded ones if parent manages that), update.
-    // But here parent manages 'images' (URLs) separately from 'files' (Blobs).
-    
-    // Simple sync: If value provided, use it as base.
-    // But we have local blobs. 
-    // Let's trust the parent 'value' if provided.
-    if (value) {
-        // If parent updates 'value', we should reflect it. 
-        // But we also have 'selectedFiles' which generate blob URLs.
-        // If we are in "upload immediately" mode, parent 'value' will contain the new URL replacing the blob.
-        // So we can just setPreviewUrls(value).
-        setPreviewUrls(value);
-    }
-  }, [value]);
+    return () => {
+      localBlobUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [localBlobUrls]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -52,50 +48,46 @@ export function ImageUpload({ label, value, onChange, onRemove, error, className
       }
     }
 
-    const newSelectedFiles = [...selectedFiles, ...files];
-    setSelectedFiles(newSelectedFiles);
+    const newLocalFiles = [...localFiles, ...files];
+    setLocalFiles(newLocalFiles);
 
-    // In "immediate upload" mode, the parent will eventually update 'value' with the real URL.
-    // But for now, show blob preview.
-    const newFilePreviews = files.map(file => URL.createObjectURL(file));
-    setPreviewUrls(prev => [...prev, ...newFilePreviews]);
+    const newBlobUrls = files.map(file => URL.createObjectURL(file));
+    setLocalBlobUrls(prev => [...prev, ...newBlobUrls]);
     
-    onChange(newSelectedFiles); // Pass selected File objects to parent
+    // Notify parent about all local files (for upload on form submission)
+    onChange(newLocalFiles);
 
     if (fileInputRef.current) {
         fileInputRef.current.value = "";
     }
   };
 
-  const handleRemoveImage = (urlToRemove: string, indexToRemove: number) => {
-    // Determine if it's a new file (blob URL)
-    const isNewFile = urlToRemove.startsWith("blob:");
+  const handleRemoveImage = (urlToRemove: string) => {
+    const isLocalBlob = urlToRemove.startsWith("blob:");
 
-    if (isNewFile) {
-        // It's a local blob
-        URL.revokeObjectURL(urlToRemove);
-        
-        // We need to find which file corresponds to this blob.
-        // This is tricky because 'previewUrls' mixes external URLs and blobs.
-        // We can count how many external URLs are there to find the offset in selectedFiles.
-        const externalUrlsCount = previewUrls.filter(u => !u.startsWith("blob:")).length;
-        const fileIndex = indexToRemove - externalUrlsCount;
+    if (isLocalBlob) {
+        // Find the index of the blob URL in localBlobUrls
+        const blobIndex = localBlobUrls.indexOf(urlToRemove);
+        if (blobIndex > -1) {
+            // Revoke the object URL
+            URL.revokeObjectURL(urlToRemove);
 
-        if (fileIndex >= 0 && selectedFiles[fileIndex]) {
-             const newSelectedFiles = selectedFiles.filter((_, i) => i !== fileIndex);
-             setSelectedFiles(newSelectedFiles);
-             onChange(newSelectedFiles);
+            // Remove from localBlobUrls and localFiles
+            const updatedLocalBlobUrls = localBlobUrls.filter((_, i) => i !== blobIndex);
+            const updatedLocalFiles = localFiles.filter((_, i) => i !== blobIndex);
+            
+            setLocalBlobUrls(updatedLocalBlobUrls);
+            setLocalFiles(updatedLocalFiles);
+
+            // Notify parent about the updated list of local files
+            onChange(updatedLocalFiles);
         }
-        
-        setPreviewUrls(prev => prev.filter((_, index) => index !== indexToRemove));
-
     } else {
-        // It's an existing external URL
+        // It's an external URL, notify parent to handle removal
         if (onRemove) {
             onRemove(urlToRemove);
         }
-        // We optimistically remove it from preview
-        setPreviewUrls(prev => prev.filter((_, index) => index !== indexToRemove));
+        // Parent is responsible for updating the 'value' prop, which will trigger re-render
     }
 
     toast.success("Image removed.");
@@ -105,10 +97,10 @@ export function ImageUpload({ label, value, onChange, onRemove, error, className
     <div className={className}>
       <label className="mb-2.5 block text-black dark:text-white">{label}</label>
       <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-stroke p-4 dark:border-dark-3">
-        {previewUrls.length > 0 ? (
+        {allPreviewUrls.length > 0 ? (
           <div className="grid grid-cols-3 gap-4 mb-4">
-            {previewUrls.map((url, index) => (
-              <div key={url + index} className="relative h-24 w-24 rounded-md overflow-hidden border border-gray-300">
+            {allPreviewUrls.map((url, index) => (
+              <div key={url || `preview-${index}`} className="relative h-24 w-24 rounded-md overflow-hidden border border-gray-300">
                 <Image
                   src={url}
                   alt={`Preview ${index + 1}`}
@@ -118,7 +110,7 @@ export function ImageUpload({ label, value, onChange, onRemove, error, className
                 />
                 <button
                   type="button"
-                  onClick={() => handleRemoveImage(url, index)}
+                  onClick={() => handleRemoveImage(url)} // Pass only the URL for removal
                   className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-600 shadow-sm opacity-80"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3">

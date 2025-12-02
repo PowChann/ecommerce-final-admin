@@ -12,6 +12,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import { ImageUpload } from "@/components/upload/ImageUpload"; // Import ImageUpload
+import { uploadImageRequest } from "@/services/upload/api"; // Import upload service
 
 const productSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long"),
@@ -19,7 +20,7 @@ const productSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters long"),
   categoryId: z.string().min(1, "Category is required"),
   brandId: z.string().min(1, "Brand is required"),
-  images: z.array(z.any()).min(1, "At least one product image is required"), // Now an array of Files
+  images: z.array(z.string().url("Image URL must be a valid URL")).min(1, "At least one product image is required"), // Now an array of URLs
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -27,6 +28,8 @@ type ProductFormData = z.infer<typeof productSchema>;
 export default function AddProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false); // New state for image upload status
+  const [processedFiles, setProcessedFiles] = useState<Set<string>>(new Set()); // To track uploaded files
 
   const {
     register,
@@ -39,11 +42,11 @@ export default function AddProductPage() {
     resolver: zodResolver(productSchema) as any, // Cast to any to resolve TS mismatch
     defaultValues: {
       name: "",
-      price: 0, // Changed from "" to 0
+      price: 0,
       description: "",
       categoryId: "",
       brandId: "",
-      images: [], // Default to empty array
+      images: [], // Default to empty array of URLs
     },
   });
 
@@ -58,12 +61,8 @@ export default function AddProductPage() {
           api.get("/brands"),
         ]);
         
-        // Handle varied response structures (array vs { data: array })
         const cats = Array.isArray(catRes.data) ? catRes.data : catRes.data.data || [];
         const brs = Array.isArray(brandRes.data) ? brandRes.data : brandRes.data.data || [];
-
-        console.log("Categories fetched:", cats);
-        console.log("Brands fetched:", brs);
 
         setCategories(cats);
         setBrands(brs);
@@ -74,27 +73,78 @@ export default function AddProductPage() {
     fetchData();
   }, []);
 
-  const handleSubmitForm = async (data: ProductFormData) => {
-    setLoading(true);
-
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("description", data.description);
-    formData.append("price", data.price.toString());
-    formData.append("categoryId", data.categoryId);
-    formData.append("brandId", data.brandId);
-
-    // Append image files
-    data.images.forEach((file) => {
-      formData.append("product_images", file); // Key must match backend's upload.array()
+  const handleImageChange = async (files: File[]) => {
+    // Determine which files actually need uploading (not in processedFiles yet)
+    const filesToUpload = files.filter(file => {
+      const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+      return !processedFiles.has(fileKey);
     });
 
+    if (filesToUpload.length === 0) {
+      setIsUploadingImages(false); // Stop uploading if no files, or only removed
+      // If all files were removed locally, `files` might be empty.
+      // We should update the form images to reflect only the URLs that remain.
+      // But `setValue("images", watch("images") || [])` keeps current images.
+      // If we completely remove all local files, we need to clear current images too.
+      // This is handled better by `handleRemoveImage`.
+      return;
+    }
+
+    setIsUploadingImages(true); // Start uploading indicator
+
+    const currentImages = watch("images") || []; // These are existing URLs
+    let newUploadedUrls: string[] = [...currentImages];
+
+    const uploadPromises = filesToUpload.map(async (file) => {
+        const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+        const toastId = toast.loading(`Uploading ${file.name}...`);
+        try {
+            const res = await uploadImageRequest(file);
+            if (res && res.data && res.data.url) {
+                let imageUrl = res.data.url;
+                if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                    imageUrl = `https://${imageUrl}`;
+                }
+                newUploadedUrls.push(imageUrl);
+                setProcessedFiles(prev => new Set(prev).add(fileKey)); // Mark as processed
+                toast.success("Uploaded successfully", { id: toastId });
+            } else {
+                toast.error("Failed to get image URL", { id: toastId });
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to upload image", { id: toastId });
+        }
+    });
+
+    await Promise.allSettled(uploadPromises); // Wait for all uploads to finish
+    setValue("images", newUploadedUrls); // Update form with all (old + new uploaded) URLs
+    setIsUploadingImages(false); // End uploading indicator
+  };
+  
+  const handleRemoveImage = (urlToRemove: string) => {
+      const currentImages = watch("images") || [];
+      const updatedImages = currentImages.filter(url => url !== urlToRemove);
+      setValue("images", updatedImages);
+      toast.success("Image removed.");
+  };
+
+  const handleSubmitForm = async (data: ProductFormData) => {
+    setLoading(true);
+    setIsUploadingImages(true); // Ensure image upload indicator is on during submission
+
+    // Images are already uploaded via handleImageChange, data.images now contains URLs
+    const payload = {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      categoryId: data.categoryId,
+      brandId: data.brandId,
+      images: data.images, // Array of URLs
+    };
+
     try {
-      await api.post("/products", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await api.post("/products", payload); // Send JSON payload
       toast.success("Product created successfully!");
       router.push("/products");
     } catch (error) {
@@ -102,6 +152,7 @@ export default function AddProductPage() {
       toast.error("Failed to create product. Please check inputs.");
     } finally {
       setLoading(false);
+      setIsUploadingImages(false);
     }
   };
 
@@ -192,18 +243,20 @@ export default function AddProductPage() {
                 
                  <ImageUpload
                   label="Product Images"
-                  value={watch("images") || []} // watch for initial display
-                  onChange={(files) => setValue("images", files)} // Set array of File objects
+                  value={watch("images")} // Now watch("images") will contain URLs
+                  onChange={handleImageChange}
+                  onRemove={handleRemoveImage}
                   error={errors.images?.message as string}
+                  uploading={isUploadingImages} // Pass uploading state
                   className="mb-6"
                 />
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || isUploadingImages} // Disable if form submitting or images uploading
                   className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90 disabled:opacity-50"
                 >
-                  {loading ? "Creating..." : "Create Product"}
+                  {loading || isUploadingImages ? "Creating..." : "Create Product"}
                 </button>
               </div>
             </form>

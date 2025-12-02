@@ -55,7 +55,8 @@ export function EditProductClient({ id }: EditProductClientProps) {
   const [isUploadingImages, setIsUploadingImages] = useState(false); // New state to track image upload progress
   
   // Track processed files to avoid re-uploading
-  const [processedFiles, setProcessedFiles] = useState<Set<string>>(new Set());
+  // Removed processedFiles state as ImageUpload now manages its internal files
+  // const [processedFiles, setProcessedFiles] = useState<Set<string>>(new Set());
 
   const {
     register,
@@ -146,23 +147,24 @@ export function EditProductClient({ id }: EditProductClientProps) {
   }, [id, reset, router, fetchVariants]);
 
   const handleImageChange = async (files: File[]) => {
-    // Determine which files actually need uploading (not in processedFiles yet)
-    const filesToUpload = files.filter(file => {
-      const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-      return !processedFiles.has(fileKey);
-    });
+    // No need to filter processedFiles here, ImageUpload manages it internally
+    // const filesToUpload = files.filter(file => {
+    //   const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+    //   return !processedFiles.has(fileKey);
+    // });
 
-    if (filesToUpload.length === 0) {
+    if (files.length === 0) { // Changed from filesToUpload.length
+      setIsUploadingImages(false); // Stop uploading if no files, or only removed
+      setValue("images", watch("images") || []); // Keep existing images if no new files
       return;
     }
 
     setIsUploadingImages(true); // Start uploading indicator
 
     const currentImages = watch("images") || [];
-    const newUrls: string[] = [...currentImages]; // Start with current images
+    let newUploadedUrls: string[] = [...currentImages]; // Start with current images
 
-    const uploadPromises = filesToUpload.map(async (file) => {
-        const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+    const uploadPromises = files.map(async (file) => { // Iterate over all received files
         const toastId = toast.loading(`Uploading ${file.name}...`);
         try {
             const res = await uploadImageRequest(file);
@@ -171,8 +173,7 @@ export function EditProductClient({ id }: EditProductClientProps) {
                 if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
                     imageUrl = `https://${imageUrl}`;
                 }
-                newUrls.push(imageUrl);
-                setProcessedFiles(prev => new Set(prev).add(fileKey)); // Mark as processed
+                newUploadedUrls.push(imageUrl);
                 toast.success("Uploaded successfully", { id: toastId });
             } else {
                 toast.error("Failed to get image URL", { id: toastId });
@@ -184,7 +185,7 @@ export function EditProductClient({ id }: EditProductClientProps) {
     });
 
     await Promise.allSettled(uploadPromises); // Wait for all uploads to finish
-    setValue("images", newUrls); // Update form with all (old + new uploaded) URLs
+    setValue("images", newUploadedUrls); // Update form with all (old + new uploaded) URLs
     setIsUploadingImages(false); // End uploading indicator
   };
   
@@ -338,6 +339,7 @@ export function EditProductClient({ id }: EditProductClientProps) {
                   onChange={handleImageChange}
                   onRemove={handleRemoveImage}
                   error={errors.images?.message as string}
+                  uploading={isUploadingImages} // Pass uploading state
                   className="mb-6"
                 />
 
