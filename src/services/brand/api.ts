@@ -3,6 +3,7 @@
 export interface Brand {
   id: string;
   name: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +22,7 @@ export interface BrandResponse {
 
 export interface BrandPayload {
   name: string;
+  image?: string;
 }
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/brands`;

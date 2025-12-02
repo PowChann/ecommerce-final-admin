@@ -2,6 +2,7 @@
 export interface Category {
   id: string;
   name: string;
+  image?: string;
   createdAt: string; // ISO Date string
   updatedAt: string;
 }
@@ -20,6 +21,7 @@ export interface CategoryResponse {
 
 export interface CategoryPayload {
   name: string;
+  image?: string;
 }
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/categories`;

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import Link from "next/link";
+import Image from "next/image"; // Thêm import Image
 import {
   Table,
   TableBody,
@@ -21,7 +22,7 @@ const ORDER_STATUSES = [
   { value: "pending", label: "Pending" },
   { value: "confirmed", label: "Confirmed" },
   { value: "shipping", label: "Shipping" },
-  { value: "delivered", label: "Delivered" },
+  { value: "completed", label: "Completed" }, // Changed from delivered to completed
   { value: "cancelled", label: "Cancelled" },
 ];
 
@@ -32,7 +33,7 @@ interface OrderDetailsClientProps {
 // Helper to get status badge classes
 const getStatusBadgeClasses = (status: Order['status'] | undefined | string) => {
   switch (status?.toLowerCase()) {
-    case 'delivered':
+    case 'completed': // Changed from delivered to completed
       return 'bg-green-100 text-green-800 border-green-200';
     case 'cancelled':
       return 'bg-red-100 text-red-800 border-red-200';
@@ -104,6 +105,19 @@ export function OrderDetailsClient({ id }: OrderDetailsClientProps) {
     }
   };
 
+  const handleDeleteOrder = async () => {
+    if (!order) return;
+    if (!confirm("Are you sure you want to delete this order? This action cannot be undone.")) return;
+    try {
+      await api.delete(`/orders/admin/${order.id}`);
+      toast.success("Order deleted successfully!");
+      router.push("/orders"); // Redirect to orders list after deletion
+    } catch (error: any) {
+      console.error("Failed to delete order", error);
+      toast.error(error.response?.data?.message || "Failed to delete order.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
@@ -137,11 +151,19 @@ export function OrderDetailsClient({ id }: OrderDetailsClientProps) {
 
         {/* Order Summary Card */}
         <div className="rounded-[10px] border border-stroke bg-white p-6 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-          <h3 className="text-xl font-semibold text-dark dark:text-white mb-6">Order Summary</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-dark dark:text-white">Order Summary</h3>
+            <button
+              onClick={handleDeleteOrder}
+              className="inline-flex items-center justify-center rounded-md bg-red-500 px-4 py-2 text-center font-medium text-white hover:bg-red-600"
+            >
+              Delete Order
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8">
             {/* Left Column */}
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Order ID: <span className="text-dark dark:text-white font-semibold">#{safeOrder.id.slice(0, 8)}</span></p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Order ID: <span className="text-dark dark:text-white font-semibold">#{safeOrder.id}</span></p>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Order Date: <span className="text-dark dark:text-white">{dayjs(safeOrder.createdAt).format("DD/MM/YYYY HH:mm")}</span></p>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Status: 
                 <span className={`ml-2 rounded px-2 py-0.5 text-xs font-medium border ${getStatusBadgeClasses(safeOrder.status)}`}>
@@ -201,7 +223,7 @@ export function OrderDetailsClient({ id }: OrderDetailsClientProps) {
               <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Name: <span className="text-dark dark:text-white">{safeOrder.user.name}</span></p>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Email: <span className="text-dark dark:text-white">{safeOrder.user.email}</span></p>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">User ID: <span className="text-dark dark:text-white">{safeOrder.user.id?.slice(0, 8)}</span></p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">User ID: <span className="text-dark dark:text-white">{safeOrder.user.id}</span></p>
               </div>
             </div>
           )}
@@ -231,6 +253,7 @@ export function OrderDetailsClient({ id }: OrderDetailsClientProps) {
               <Table>
                 <TableHeader>
                   <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
+                    <TableHead>Image</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead>Quantity</TableHead>
@@ -240,6 +263,23 @@ export function OrderDetailsClient({ id }: OrderDetailsClientProps) {
                 <TableBody>
                   {safeOrder.items.map((item) => (
                     <TableRow key={item.id} className="border-[#eee] dark:border-dark-3">
+                      <TableCell>
+                        {item.productImageUrl ? (
+                          <div className="relative h-12 w-12 rounded-md overflow-hidden">
+                            <Image
+                              src={item.productImageUrl}
+                              alt={item.productName}
+                              fill
+                              className="object-cover"
+                            />
+
+                          </div>
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-gray-200 text-xs text-gray-500">
+                            No Img
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>{item.productName}</TableCell>
                       <TableCell>{item.unitPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</TableCell>
                       <TableCell>{item.quantity}</TableCell>

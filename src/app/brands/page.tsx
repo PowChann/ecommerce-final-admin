@@ -1,6 +1,8 @@
 "use client";
 
 import Breadcrumb from "@/components/ui/breadcrumb";
+import { ImageUpload } from "@/components/upload/ImageUpload";
+import Image from "next/image";
 // Bỏ import InputGroup vì ta sẽ dùng input thường
 import {
   Table,
@@ -19,6 +21,8 @@ import {
   Brand,
   Pagination,
 } from "@/services/brand/api"; // Đảm bảo đường dẫn đúng
+
+import { uploadImageRequest } from "@/services/upload/api"; // Import upload service
 
 import { useEffect, useState, ReactNode } from "react";
 import { useForm } from "react-hook-form";
@@ -87,6 +91,7 @@ const Modal = ({
 
 const brandSchema = z.object({
   name: z.string().min(3, "Brand name must be at least 3 characters long"),
+  image: z.string().url("Image URL must be a valid URL").optional().or(z.literal('')), // Change back to image
 });
 
 type BrandFormData = z.infer<typeof brandSchema>;
@@ -95,6 +100,7 @@ export default function BrandsPage() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false); // New state to track image upload
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -109,9 +115,10 @@ export default function BrandsPage() {
     formState: { errors },
     reset,
     setValue,
+    watch, // Add watch here
   } = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
-    defaultValues: { name: "" },
+    defaultValues: { name: "", image: "" }, // Change to image
   });
 
   const { setIsModalOpen } = useModalContext(); // Get setIsModalOpen from context
@@ -144,15 +151,52 @@ export default function BrandsPage() {
     fetchBrands();
   }, []);
 
+  const handleImageChange = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    setIsUploadingImage(true);
+    const fileToUpload = files[0];
+    const toastId = toast.loading(`Uploading ${fileToUpload.name}...`);
+    try {
+      const res = await uploadImageRequest(fileToUpload);
+      if (res && res.data && res.data.url) {
+        let imageUrl = res.data.url;
+        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+          imageUrl = `https://${imageUrl}`;
+        }
+        setValue("image", imageUrl); // Change to image
+        toast.success("Image uploaded successfully!", { id: toastId });
+      } else {
+        toast.error("Failed to get image URL", { id: toastId });
+        setValue("image", ""); // Change to image
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image", { id: toastId });
+      setValue("image", ""); // Change to image
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setValue("image", ""); // Change to image
+    toast.success("Image removed.");
+  };
+
   const onSubmit = async (data: BrandFormData) => {
     console.log("Submitting form with data:", data);
     console.log("Editing ID:", editingId);
     try {
+      // Use watch("image") to get the current value, as data.image might not be updated yet after async upload
+      const currentImage = watch("image"); // Change to image
+      const payload = { ...data, image: currentImage || undefined }; // Change to image
+
       if (editingId) {
-        await updateBrandApi(editingId, data);
+        await updateBrandApi(editingId, payload);
         toast.success("Brand updated successfully!");
       } else {
-        await createBrandApi(data);
+        await createBrandApi(payload);
         toast.success("Brand created successfully!");
       }
       handleCloseFormModal();
@@ -180,7 +224,7 @@ export default function BrandsPage() {
 
   const handleOpenCreate = () => {
     setEditingId(null);
-    reset({ name: "" });
+    reset({ name: "", image: "" }); // Reset image
     setIsFormModalOpen(true);
   };
 
@@ -188,13 +232,14 @@ export default function BrandsPage() {
     console.log("Opening edit for brand:", brand);
     setEditingId(brand.id);
     setValue("name", brand.name);
+    setValue("image", brand.image || ""); // Set existing image
     setIsFormModalOpen(true);
   };
 
   const handleCloseFormModal = () => {
     setIsFormModalOpen(false);
     setEditingId(null);
-    reset({ name: "" });
+    reset({ name: "", image: "" }); // Reset image on close
   };
 
   const handleOpenDelete = (id: string) => {
@@ -240,6 +285,7 @@ export default function BrandsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-[#F7F9FC] dark:bg-dark-2">
+                  <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Created At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -248,13 +294,24 @@ export default function BrandsPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="py-4 text-center">
+                    <TableCell colSpan={4} className="py-4 text-center">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : brands.length > 0 ? (
                   brands.map((brand) => (
                     <TableRow key={brand.id}>
+                      <TableCell className="font-medium">
+                        {brand.image && (
+                          <Image
+                            src={brand.image}
+                            alt={brand.name}
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {brand.name}
                       </TableCell>
@@ -277,7 +334,7 @@ export default function BrandsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       No brands found.
                     </TableCell>
                   </TableRow>
@@ -336,6 +393,19 @@ export default function BrandsPage() {
             )}
           </div>
 
+          <div className="mb-4">
+            <ImageUpload
+              label="Brand Image"
+              value={watch("image") ? [watch("image") as string] : []} // Pass current image as an array of strings
+              onChange={(files) => handleImageChange(files)} // Handle upload
+              onRemove={() => handleRemoveImage()} // Handle removal
+              error={errors.image?.message} // Display image errors
+            />
+             {errors.image && (
+              <p className="mt-1 text-sm text-red-500">{errors.image.message}</p>
+            )}
+          </div>
+
           <div className="mt-6 flex justify-end gap-3">
             <button
               type="button"
@@ -346,7 +416,8 @@ export default function BrandsPage() {
             </button>
             <button
               type="submit"
-              className="rounded bg-primary px-6 py-2 font-medium text-white hover:bg-opacity-90"
+              disabled={isUploadingImage} // Disable if image is uploading
+              className="rounded bg-primary px-6 py-2 font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
             >
               {editingId ? "Save Changes" : "Create"}
             </button>

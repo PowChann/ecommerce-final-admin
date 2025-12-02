@@ -41,11 +41,13 @@ export interface ProductVariant {
 export interface Category {
   id: string;
   name: string;
+  image?: string;
 }
 
 export interface Brand {
   id: string;
   name: string;
+  image?: string;
 }
 
 export interface OrderStatusHistory {
@@ -101,6 +103,7 @@ export interface OrderItem {
   
   // Extended fields
   productName: string;
+  productImageUrl?: string; // Add this line
   unitPrice: number; // Keep unitPrice for clarity with price
   subTotal: number; // Quantity * UnitPrice
   createdAt?: string;
