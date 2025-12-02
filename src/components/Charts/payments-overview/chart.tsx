@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes"; // Import useTheme
+import { useMemo } from "react"; // Import useMemo
 
 type PropsType = {
   data: {
@@ -20,7 +21,7 @@ export function PaymentsOverviewChart({ data }: PropsType) {
   const isMobile = useIsMobile();
   const { theme } = useTheme(); // Get current theme
 
-  const options: ApexOptions = {
+  const options: ApexOptions = useMemo(() => ({
     theme: {
       mode: theme === 'dark' ? 'dark' : 'light', // Set theme dynamically
     },
@@ -113,22 +114,24 @@ export function PaymentsOverviewChart({ data }: PropsType) {
         },
       },
     },
-  };
+  }), [isMobile, theme, data]); // Dependencies for options
+
+  const series = useMemo(() => ([
+    {
+      name: "Received",
+      data: data.received,
+    },
+    {
+      name: "Due",
+      data: data.due,
+    },
+  ]), [data]); // Dependencies for series
 
   return (
     <div className="-ml-4 -mr-5 h-[310px]">
       <Chart
         options={options}
-        series={[
-          {
-            name: "Received",
-            data: data.received,
-          },
-          {
-            name: "Due",
-            data: data.due,
-          },
-        ]}
+        series={series}
         type="area"
         height={310}
       />

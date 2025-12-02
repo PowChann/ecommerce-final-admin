@@ -128,6 +128,7 @@ export function ProfitChart({
       },
     },
     yaxis: {
+      min: 0, // Ensure Y-axis starts from 0
       title: {
         style: {
           fontSize: "0px",

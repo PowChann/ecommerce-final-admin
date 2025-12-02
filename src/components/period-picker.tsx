@@ -4,142 +4,69 @@ import { ChevronUpIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Dropdown, DropdownContent, DropdownTrigger } from "./ui/dropdown";
+// Removed Dropdown, DropdownContent, DropdownTrigger imports
+// import { Dropdown, DropdownContent, DropdownTrigger } from "./ui/dropdown"; // No longer needed
 
 type PropsType<TItem> = {
-
   defaultValue?: TItem;
-
   items?: TItem[];
-
   minimal?: boolean;
-
 };
-
-
 
 const PARAM_KEY = "selected_time_frame";
 
-
-
 export function PeriodPicker<TItem extends string>({
-
   defaultValue,
-
   items,
-
-  minimal,
-
+  minimal, // 'minimal' prop might be ignored for segmented buttons, or adapted
 }: PropsType<TItem>) {
-
   const router = useRouter();
-
   const pathname = usePathname();
-
   const searchParams = useSearchParams();
 
-
-
-  const [isOpen, setIsOpen] = useState(false);
-
-
-
   // Get current selected time frame from URL
+  const currentSelectedTimeFrame = searchParams.get(PARAM_KEY) || defaultValue || "monthly"; // Default to 'monthly' if none
 
-  const currentSelectedTimeFrame = searchParams.get(PARAM_KEY) || defaultValue;
+  const periodItems = items || ["daily", "weekly", "monthly", "quarterly", "yearly"];
 
-
+  const handlePeriodChange = (item: TItem) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(PARAM_KEY, item);
+    router.push(`${pathname}?${params.toString()}`, {
+      scroll: false,
+    });
+  };
 
   return (
-
-    <Dropdown isOpen={isOpen} setIsOpen={setIsOpen}>
-
-      <DropdownTrigger
-
-        className={cn(
-
-          "flex h-8 w-full items-center justify-between gap-x-1 rounded-md border border-[#E8E8E8] bg-white px-3 py-2 text-sm font-medium text-dark-5 outline-none ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-neutral-500 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:ring-offset-neutral-950 dark:focus:ring-neutral-300 dark:data-[placeholder]:text-neutral-400 [&>span]:line-clamp-1 [&[data-state='open']>svg]:rotate-0",
-
-          minimal &&
-
-            "border-none bg-transparent p-0 text-dark dark:bg-transparent dark:text-white",
-
-        )}
-
-      >
-
-        <span className="capitalize">{currentSelectedTimeFrame || "Time Period"}</span>
-
-
-
-        <ChevronUpIcon className="size-4 rotate-180 transition-transform" />
-
-      </DropdownTrigger>
-
-
-
-      <DropdownContent
-
-        align="end"
-
-        className="min-w-[7rem] overflow-hidden rounded-lg border border-[#E8E8E8] bg-white p-1 font-medium text-dark-5 shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-dark-3 dark:bg-dark-2 dark:text-current"
-
-      >
-
-                  <ul>
-
-                    {(items || ["daily", "weekly", "monthly", "quarterly", "yearly"]).map((item) => (
-
-                      <li key={item}>              <button
-
-                className="flex w-full select-none items-center truncate rounded-md px-3 py-2 text-sm capitalize outline-none hover:bg-[#F9FAFB] hover:text-dark-3 dark:hover:bg-[#FFFFFF1A] dark:hover:text-white"
-
-                onClick={() => {
-
-                  const params = new URLSearchParams(searchParams.toString());
-
-                  params.set(PARAM_KEY, item);
-
-                  router.push(`${pathname}?${params.toString()}`, {
-
-                    scroll: false,
-
-                  });
-
-
-
-                  setIsOpen(false);
-
-                }}
-
-              >
-
-                {item}
-
-              </button>
-
-            </li>
-
-          ))}
-
-        </ul>
-
-      </DropdownContent>
-
-    </Dropdown>
-
+    <div className={cn(
+        "inline-flex items-center rounded-md border border-stroke dark:border-dark-3 bg-white dark:bg-dark-2 text-dark-5 dark:text-white text-sm font-medium",
+        minimal && "border-none bg-transparent dark:bg-transparent" // Adjust styling for minimal
+    )}>
+      {periodItems.map((item) => (
+        <button
+          key={item}
+          onClick={() => handlePeriodChange(item as TItem)}
+          className={cn(
+            "px-3 py-1.5 transition-colors duration-200",
+            currentSelectedTimeFrame === item
+              ? "bg-primary text-white"
+              : "hover:bg-gray-100 dark:hover:bg-dark-3",
+            // Add rounded classes for first and last buttons
+            item === periodItems[0] && "rounded-l-md",
+            item === periodItems[periodItems.length - 1] && "rounded-r-md",
+            // Add border between buttons
+            item !== periodItems[periodItems.length - 1] && "border-r border-stroke dark:border-dark-3"
+          )}
+        >
+          {item.charAt(0).toUpperCase() + item.slice(1)}
+        </button>
+      ))}
+    </div>
   );
-
 }
-
-
-
-const createQueryString = (key: string, value: string) => {
-
-  const params = new URLSearchParams(window.location.search);
-
-  params.set(key, value);
-
-  return params.toString();
-
-};
+// Removed createQueryString as it's no longer used
+// const createQueryString = (key: string, value: string) => {
+//   const params = new URLSearchParams(window.location.search);
+//   params.set(key, value);
+//   return params.toString();
+// };
