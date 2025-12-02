@@ -13,7 +13,7 @@ export async function OverviewCardsGroup() {
         label="Revenue"
         data={{
           ...revenue,
-          value: "$" + compactFormat(revenue.value),
+          value: revenue.value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }),
         }}
         Icon={icons.Profit}
       />
@@ -25,15 +25,6 @@ export async function OverviewCardsGroup() {
           value: compactFormat(totalUsers.value),
         }}
         Icon={icons.Users}
-      />
-
-      <OverviewCard
-        label="New Users"
-        data={{
-          ...newUsers,
-          value: compactFormat(newUsers.value),
-        }}
-        Icon={icons.Users} // Using Users icon for new users
       />
 
       <OverviewCard

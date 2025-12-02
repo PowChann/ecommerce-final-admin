@@ -8,6 +8,7 @@ import type { PropsWithChildren } from "react";
 import { Providers } from "./providers";
 import { Toaster } from "react-hot-toast";
 import MasterLayout from "@/components/layout/MasterLayout";
+import { ModalProvider } from "@/contexts/modal-context"; // Import ModalProvider
 
 export const metadata: Metadata = {
   title: {
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: PropsWithChildren) {
           <NextTopLoader color="#5750F1" showSpinner={false} />
 
           {/* Sử dụng MasterLayout để điều khiển giao diện Sidebar/Header */}
-          <MasterLayout>{children}</MasterLayout>
+          <ModalProvider>
+            <MasterLayout>{children}</MasterLayout>
+          </ModalProvider>
 
           <Toaster />
         </Providers>

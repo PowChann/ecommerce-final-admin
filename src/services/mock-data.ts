@@ -71,8 +71,8 @@ export const MOCK_PRODUCT_DETAILS: Product = {
 export const MOCK_ORDER_DETAILS: Order = {
   id: "o1",
   userId: "u2",
-  status: "pending",
-  discountId: null,
+  user: { id: "u2", email: "bob@example.com", name: "Bob Buyer", role: "user", banned: false, loyaltyPoints: 50 },
+  status: "confirmed", // Example: Start as confirmed
   shippingAddress: {
     fullName: "Bob Buyer",
     phone: "123-456-7890",
@@ -86,26 +86,51 @@ export const MOCK_ORDER_DETAILS: Order = {
     postalCode: "90210",
     country: "USA",
   },
-  discountAmount: 0,
-  shippingFee: 500, // 5.00 VND
-  tax: 1000, // 10.00 VND
-  subtotal: 999,
-  grandTotal: 2499, // 999 + 500 + 1000
-  pointUsed: 0,
-  pointEarned: 24,
+  discountAmount: 100000,
+  shippingFee: 50000,
+  tax: 80000,
+  subtotal: 1000000,
+  grandTotal: 1230000, // Adjusted to match calculations
+  pointUsed: 50,
+  pointEarned: 100,
+  
+  // New fields
+  paymentMethod: "COD", // If we still need this field
+  paymentStatus: "unpaid", // If we still need this field
+  couponCode: "SUMMER20", // If we still need this field
+
+  discount: {
+    id: "d1",
+    code: "SUMMER20",
+    value: 100000, // Fixed amount
+    type: "fixed",
+    usageLimit: 100,
+    timesUsed: 10,
+    createdAt: "2023-06-01T10:00:00Z",
+    updatedAt: "2023-06-01T10:00:00Z",
+  },
+  payment: {
+    id: "pay1",
+    method: "COD",
+    status: "pending",
+    amount: 1230000,
+    createdAt: "2023-03-01T10:00:00Z",
+    updatedAt: "2023-03-01T10:00:00Z",
+  },
+
   createdAt: "2023-03-01T10:00:00Z",
   updatedAt: "2023-03-01T10:00:00Z",
-  user: { id: "u2", email: "bob@example.com", name: "Bob Buyer", role: "user", banned: false, loyaltyPoints: 50 },
   items: [
     { 
-      id: "oi1", orderId: "o1", productId: MOCK_PRODUCT_DETAILS.id, productName: MOCK_PRODUCT_DETAILS.name, quantity: 1, price: 999, unitPrice: 999, subTotal: 999,
+      id: "oi1", orderId: "o1", productId: MOCK_PRODUCT_DETAILS.id, productName: MOCK_PRODUCT_DETAILS.name, quantity: 1, price: 999000, unitPrice: 999000, subTotal: 999000,
       createdAt: "2023-03-01T10:00:00Z", updatedAt: "2023-03-01T10:00:00Z",
       product: MOCK_PRODUCT_DETAILS
     }
   ],
   statusHistory: [
     { id: "osh1", orderId: "o1", status: "pending", createdAt: "2023-03-01T10:00:00Z" },
-    { id: "osh2", orderId: "o1", status: "processing", createdAt: "2023-03-01T11:00:00Z" },
+    { id: "osh2", orderId: "o1", status: "confirmed", createdAt: "2023-03-01T10:05:00Z", updatedBy: "admin_id_1", updatedByUser: { id: "admin_id_1", name: "Admin One", email: "admin1@example.com" } },
+    { id: "osh3", orderId: "o1", status: "shipping", createdAt: "2023-03-01T11:00:00Z" },
   ],
 };
 
@@ -167,35 +192,65 @@ export const MOCK_ORDERS: Order[] = [
   {
     id: "o2",
     userId: "u3",
-    status: "pending",
-    shippingAddress: "456 Elm St",
-    grandTotal: 89,
-    subtotal: 89,
+    user: MOCK_USERS[2], // Populated user info
+    status: "delivered", // Example status
+    shippingAddress: {
+      fullName: "Charlie Customer",
+      phone: "0987654321",
+      addressLine1: "456 Oak Avenue",
+      city: "Hanoi",
+      country: "Vietnam",
+    },
+    grandTotal: 890000,
+    subtotal: 890000,
     tax: 0,
     shippingFee: 0,
     discountAmount: 0,
+    paymentMethod: "COD",
+    paymentStatus: "paid",
+    couponCode: undefined,
     createdAt: "2023-03-02T11:00:00Z",
-    user: MOCK_USERS[2],
+    updatedAt: "2023-03-02T12:00:00Z",
     items: [
-      { id: "oi2", orderId: "o2", productId: "p2", quantity: 1, price: 89, productName: "Designer Jeans", unitPrice: 89, subTotal: 89, product: MOCK_PRODUCTS[1] }
-    ]
+      { id: "oi2", orderId: "o2", productId: "p2", quantity: 1, price: 890000, productName: "Designer Jeans", unitPrice: 890000, subTotal: 890000, product: MOCK_PRODUCTS[1] }
+    ],
+    statusHistory: [
+      { id: "osh4", orderId: "o2", status: "pending", createdAt: "2023-03-02T11:00:00Z" },
+      { id: "osh5", orderId: "o2", status: "confirmed", createdAt: "2023-03-02T11:10:00Z" },
+      { id: "osh6", orderId: "o2", status: "delivered", createdAt: "2023-03-02T12:00:00Z" },
+    ],
   },
   {
     id: "o3",
     userId: "u5",
-    status: "shipped",
-    shippingAddress: "789 Oak St",
-    grandTotal: 1609,
-    subtotal: 1609,
+    user: MOCK_USERS[4], // Populated user info
+    status: "shipping", // Example status
+    shippingAddress: {
+      fullName: "Eve Explorer",
+      phone: "0123456789",
+      addressLine1: "789 Pine Street",
+      city: "Danang",
+      country: "Vietnam",
+    },
+    grandTotal: 1609000,
+    subtotal: 1609000,
     tax: 0,
     shippingFee: 0,
     discountAmount: 0,
+    paymentMethod: "Online Banking",
+    paymentStatus: "paid",
+    couponCode: "WELCOME10",
     createdAt: "2023-03-03T12:00:00Z",
-    user: MOCK_USERS[4],
+    updatedAt: "2023-03-03T13:00:00Z",
     items: [
-      { id: "oi3", orderId: "o3", productId: "p3", quantity: 1, price: 1499, productName: "Laptop Pro", unitPrice: 1499, subTotal: 1499, product: MOCK_PRODUCTS[2] },
-      { id: "oi4", orderId: "o3", productId: "p5", quantity: 1, price: 110, productName: "Running Shoes", unitPrice: 110, subTotal: 110, product: MOCK_PRODUCTS[4] }
-    ]
+      { id: "oi3", orderId: "o3", productId: "p3", quantity: 1, price: 1499000, productName: "Laptop Pro", unitPrice: 1499000, subTotal: 1499000, product: MOCK_PRODUCTS[2] },
+      { id: "oi4", orderId: "o3", productId: "p5", quantity: 1, price: 110000, productName: "Running Shoes", unitPrice: 110000, subTotal: 110000, product: MOCK_PRODUCTS[4] }
+    ],
+    statusHistory: [
+      { id: "osh7", orderId: "o3", status: "pending", createdAt: "2023-03-03T12:00:00Z" },
+      { id: "osh8", orderId: "o3", status: "confirmed", createdAt: "2023-03-03T12:05:00Z" },
+      { id: "osh9", orderId: "o3", status: "shipping", createdAt: "2023-03-03T13:00:00Z" },
+    ],
   },
 ];
 

@@ -68,7 +68,6 @@ api.interceptors.response.use(
                     data: {
                         revenue: { value: MOCK_STATS.totalRevenue, growthRate: 0 },
                         totalUsers: { value: MOCK_STATS.totalUsers, growthRate: 0 },
-                        newUsers: { value: MOCK_STATS.totalUsers, growthRate: 0 }, // Same as totalUsers per request
                         totalOrders: { value: MOCK_STATS.totalOrders, growthRate: 0 },
                         topSellingProduct: { name: "Smartphone X", value: 150, growthRate: 0 }
                     }

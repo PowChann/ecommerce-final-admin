@@ -102,19 +102,24 @@ export default function ProductsPage() {
 
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-x-4">
-        <Breadcrumb pageName="Products" />
+      <Breadcrumb pageName="Products" />
+
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-black dark:text-white">
+          Product Management
+        </h2>
         <Link
           href="/products/add"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+          className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
         >
-          Add Product
+          Add New Product
         </Link>
       </div>
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        <div className="max-w-full overflow-x-auto">
-          <Table>
+      <div className="flex flex-col gap-9">
+        <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+          <div className="p-4">
+            <Table>
             <TableHeader>
               <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
                 <TableHead>Image</TableHead>
@@ -163,7 +168,7 @@ export default function ProductsPage() {
                     <TableCell>
                         {product.category?.name || categories.find(c => c.id === product.categoryId)?.name || product.categoryId}
                     </TableCell>
-                    <TableCell>${product.price.toLocaleString()}</TableCell>
+                    <TableCell>{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</TableCell>
                     <TableCell>
                         {product.brand?.name || brands.find(b => b.id === product.brandId)?.name || product.brandId}
                     </TableCell>
@@ -183,28 +188,35 @@ export default function ProductsPage() {
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination Logic Placeholder */}
-        <div className="flex justify-end mt-4 gap-2">
-          <button 
-            disabled={page <= 1} 
-            onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1 rounded border disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span className="px-3 py-1">Page {page} of {totalPages}</span>
-          <button 
-            disabled={page >= totalPages} 
-            onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1 rounded border disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+                      </Table>
+          
+                      {/* Pagination Logic */}
+                      {totalPages > 1 && (
+                        <div className="mt-2 flex items-center justify-end gap-4 border-t border-stroke py-4 dark:border-dark-3">
+                          <span className="text-sm text-gray-700 dark:text-gray-400">
+                            Page {page} of {totalPages}
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setPage((p) => p - 1)}
+                              disabled={page <= 1}
+                              className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-dark-2"
+                            >
+                              Previous
+                            </button>
+                            <button
+                              onClick={() => setPage((p) => p + 1)}
+                              disabled={page >= totalPages}
+                              className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-dark-2"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }

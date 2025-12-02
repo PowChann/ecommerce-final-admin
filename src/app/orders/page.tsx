@@ -27,11 +27,11 @@ const EyeIcon = () => (
 );
 
 const ORDER_STATUSES = [
-  { value: "pending", label: "Pending" },
-  { value: "shipped", label: "Shipped" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "completed", label: "Completed" },
+  { value: "pending", label: "pending" },
+  { value: "confirmed", label: "confirmed" },
+  { value: "shipping", label: "shipping" },
+  { value: "delivered", label: "delivered" },
+  { value: "cancelled", label: "cancelled" },
 ];
 
 function OrdersContent() {
@@ -60,16 +60,15 @@ function OrdersContent() {
       });
       
       if (response.data && Array.isArray(response.data.data)) {
-         setOrders(response.data.data);
+         const fetchedOrders = response.data.data;
+         setOrders(fetchedOrders);
          setTotalPages(response.data.pagination?.totalPages || 1);
       } else {
          setOrders([]);
          setTotalPages(1);
-         // toast.error("Invalid API response format for orders."); // Suppress on init
       }
     } catch (error: any) {
       console.error("Failed to fetch orders", error);
-      // toast.error(error.response?.data?.message || "Failed to fetch orders.");
       setOrders([]);
       setTotalPages(1);
     } finally {
@@ -97,14 +96,19 @@ function OrdersContent() {
 
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-x-4">
-        <Breadcrumb pageName="Orders" />
+      <Breadcrumb pageName="Orders" />
+
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl font-semibold text-black dark:text-white">
+          Order Management
+        </h2>
         <PeriodPicker />
       </div>
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        <div className="max-w-full overflow-x-auto">
-          <Table>
+      <div className="flex flex-col gap-9">
+        <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+          <div className="p-4">
+            <Table>
             <TableHeader>
               <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
                 <TableHead>Order ID</TableHead>
@@ -131,25 +135,26 @@ function OrdersContent() {
                         #{order.id.slice(0, 8)}
                     </TableCell>
                     <TableCell>
-                        {order.user?.email || order.user?.name || order.userId.slice(0, 8)}
+                        {order.user?.name || order.user?.email || order.userId.slice(0, 8)}
                     </TableCell>
                     <TableCell>
                         {dayjs(order.createdAt).format("MMM DD, YYYY")}
                     </TableCell>
-                    <TableCell>${order.grandTotal.toLocaleString()}</TableCell>
+                    <TableCell>{order.grandTotal.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</TableCell>
                     <TableCell>
                       <select
                         value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value as Order['status'])}
                         className={`rounded px-2 py-1 text-xs font-medium border ${
-                            order.status === 'delivered' || order.status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' :
-                            order.status === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' :
-                            order.status === 'shipped' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                            order.status.toLowerCase() === 'delivered' ? 'bg-green-100 text-green-800 border-green-200' :
+                            order.status.toLowerCase() === 'cancelled' ? 'bg-red-100 text-red-800 border-red-200' :
+                            order.status.toLowerCase() === 'shipping' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                            order.status.toLowerCase() === 'confirmed' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' :
                             'bg-yellow-100 text-yellow-800 border-yellow-200'
                         }`}
                       >
                         {ORDER_STATUSES.map((s) => (
-                            <option key={s.value} value={s.value}>{s.label}</option>
+                            <option key={s.value} value={s.value}>{s.label.charAt(0).toUpperCase() + s.label.slice(1)}</option>
                         ))}
                       </select>
                     </TableCell>
@@ -164,32 +169,38 @@ function OrdersContent() {
                 ))
               )}
             </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex justify-end mt-4 gap-2">
-          <button 
-            disabled={page <= 1} 
-            onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1 rounded border disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <span className="px-3 py-1">Page {page} of {totalPages}</span>
-          <button 
-            disabled={page >= totalPages} 
-            onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1 rounded border disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
+                      </Table>
+          
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="mt-2 flex items-center justify-end gap-4 border-t border-stroke py-4 dark:border-dark-3">
+                          <span className="text-sm text-gray-700 dark:text-gray-400">
+                            Page {page} of {totalPages}
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              disabled={page <= 1}
+                              onClick={() => setPage((p) => p - 1)}
+                              className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-dark-2"
+                            >
+                              Prev
+                            </button>
+                            <button
+                              disabled={page >= totalPages}
+                              onClick={() => setPage((p) => p + 1)}
+                              className="rounded border px-3 py-1 hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-dark-2"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
 export default function OrdersPage() {
   return (
     <Suspense fallback={<div className="p-4">Loading orders...</div>}>

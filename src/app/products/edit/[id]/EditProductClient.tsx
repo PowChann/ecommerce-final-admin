@@ -120,6 +120,7 @@ export function EditProductClient({ id }: EditProductClientProps) {
                 imgUrl.startsWith('http://') || imgUrl.startsWith('https://') ? imgUrl : `https://${imgUrl}`
             ), // Load all images with enforced protocol
           });
+          console.log("Initial product data brandId:", productData.brandId); // Debug log
         }
 
         // Categories
@@ -129,6 +130,7 @@ export function EditProductClient({ id }: EditProductClientProps) {
         // Brands
         const brs = Array.isArray(brandRes.data) ? brandRes.data : brandRes.data.data || [];
         setBrands(brs);
+        console.log("Fetched brands:", brs); // Debug log
 
         await fetchVariants(); // Fetch variants after product data
 
@@ -213,14 +215,15 @@ export function EditProductClient({ id }: EditProductClientProps) {
         images: data.images, // Now correctly uses the array of URLs
       };
 
-      console.log("Sending payload for product update:", payload); // Removed log
+      console.log("Sending payload for product update:", payload); // Debug log
       await api.put(`/products/${id}`, payload);
       toast.success("Product updated successfully!");
       router.push("/products");
     } catch (error: any) { // Type 'any' for better error handling in logs
       console.error("Failed to update product:", error); // Log full error object
       toast.error(error.response?.data?.message || "Failed to update product. Please check inputs.");
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -399,7 +402,7 @@ export function EditProductClient({ id }: EditProductClientProps) {
                             {/* Removed console log */}
                           </TableCell>
                           <TableCell>{variant.sku}</TableCell>
-                          <TableCell>${variant.price.toLocaleString()}</TableCell>
+                          <TableCell>{variant.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</TableCell>
                           <TableCell>{variant.quantity}</TableCell>
                           <TableCell>
                             {Object.entries(variant.attributes).map(([key, value]) => (

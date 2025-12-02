@@ -135,7 +135,10 @@ export function OrdersChart({
       },
       min: 0,
       labels: {
-        formatter: (value) => value.toLocaleString('en-US'),
+        formatter: (value) => {
+          if (typeof value === "number") return value.toLocaleString('vi-VN');
+          return String(value);
+        },
         style: {
           colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
           fontSize: "12px",
@@ -145,7 +148,8 @@ export function OrdersChart({
     tooltip: {
       y: {
         formatter: function (value) {
-          return value.toLocaleString('en-US');
+          if (typeof value === "number") return value.toLocaleString('vi-VN');
+          return String(value);
         }
       }
     },

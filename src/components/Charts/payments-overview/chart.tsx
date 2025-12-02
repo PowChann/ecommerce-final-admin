@@ -81,7 +81,8 @@ export function PaymentsOverviewChart({ data }: PropsType) {
     yaxis: {
       labels: {
         formatter: function (value) {
-          return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+          if (typeof value === "number") return value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+          return String(value);
         },
         style: {
           colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
@@ -94,7 +95,8 @@ export function PaymentsOverviewChart({ data }: PropsType) {
       },
       y: {
         formatter: function (value) {
-          return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+          if (typeof value === "number") return value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+          return String(value);
         },
       },
     },

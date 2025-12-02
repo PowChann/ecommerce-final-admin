@@ -40,7 +40,7 @@ export async function RecentOrders() {
                     <p className="text-black dark:text-white">{order.customerName}</p>
                   </TableCell>
                   <TableCell className="min-w-[150px] text-left">
-                    <p className="text-black dark:text-white">${order.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                    <p className="text-black dark:text-white">{order.totalAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</p>
                   </TableCell>
                   <TableCell className="min-w-[120px] text-left">
                     <p className={`inline-flex rounded-full bg-opacity-10 py-1 px-3 text-sm font-medium ${

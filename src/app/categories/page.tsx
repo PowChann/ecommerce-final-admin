@@ -26,6 +26,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import { useModalContext } from "@/contexts/modal-context";
 
 // --- 1. COMPONENT MODAL TỰ VIẾT (Tái sử dụng) ---
 interface ModalProps {
@@ -112,6 +113,17 @@ export default function CategoriesPage() {
     resolver: zodResolver(categorySchema),
     defaultValues: { name: "" },
   });
+
+  const { setIsModalOpen } = useModalContext();
+
+  useEffect(() => {
+    if (isFormModalOpen || isDeleteModalOpen) {
+      setIsModalOpen(true);
+    } else {
+      setIsModalOpen(false);
+    }
+    return () => setIsModalOpen(false);
+  }, [isFormModalOpen, isDeleteModalOpen, setIsModalOpen]);
 
   const fetchCategories = async (page = 1) => {
     setLoading(true);

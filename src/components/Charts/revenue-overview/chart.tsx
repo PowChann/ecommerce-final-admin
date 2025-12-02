@@ -132,7 +132,10 @@ export function RevenueChart({
       },
       min: 0,
       labels: {
-        formatter: (value) => value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
+        formatter: (value) => {
+          if (typeof value === "number") return value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+          return String(value);
+        },
         style: {
           colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
           fontSize: "12px",
@@ -142,7 +145,8 @@ export function RevenueChart({
     tooltip: {
       y: {
         formatter: function (val) {
-          return val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+          if (typeof val === "number") return val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+          return String(val);
         }
       }
     },

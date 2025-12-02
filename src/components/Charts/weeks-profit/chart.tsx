@@ -77,7 +77,10 @@ export function WeeksProfitChart({ data }: PropsType) {
 
     yaxis: {
       labels: {
-        formatter: (value) => value.toLocaleString('en-US'),
+        formatter: (value) => {
+          if (typeof value === "number") return value.toLocaleString('vi-VN');
+          return String(value);
+        },
         style: {
           colors: theme === 'dark' ? '#fff' : '#616161', // Adjust Y-axis label color for theme
         },
@@ -86,7 +89,8 @@ export function WeeksProfitChart({ data }: PropsType) {
     tooltip: {
       y: {
         formatter: function (val) {
-          return val.toLocaleString('en-US');
+          if (typeof val === "number") return val.toLocaleString('vi-VN');
+          return String(val);
         }
       }
     },

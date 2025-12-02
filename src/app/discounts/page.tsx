@@ -25,6 +25,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
+import { useModalContext } from "@/contexts/modal-context";
 
 // --- 1. COMPONENT MODAL TỰ VIẾT ---
 interface ModalProps {
@@ -131,6 +132,17 @@ export default function DiscountsPage() {
       usageLimit: 10,
     },
   });
+
+  const { setIsModalOpen } = useModalContext();
+
+  useEffect(() => {
+    if (isFormModalOpen || isDeleteModalOpen) {
+      setIsModalOpen(true);
+    } else {
+      setIsModalOpen(false);
+    }
+    return () => setIsModalOpen(false);
+  }, [isFormModalOpen, isDeleteModalOpen, setIsModalOpen]);
 
   const fetchDiscounts = async (page = 1) => {
     setLoading(true);

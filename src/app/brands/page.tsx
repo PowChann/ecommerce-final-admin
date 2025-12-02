@@ -26,6 +26,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import { useModalContext } from "@/contexts/modal-context"; // Import useModalContext
 
 // --- 1. COMPONENT MODAL TỰ VIẾT (Tái sử dụng) ---
 interface ModalProps {
@@ -113,6 +114,18 @@ export default function BrandsPage() {
     defaultValues: { name: "" },
   });
 
+  const { setIsModalOpen } = useModalContext(); // Get setIsModalOpen from context
+
+  useEffect(() => {
+    if (isFormModalOpen || isDeleteModalOpen) {
+      setIsModalOpen(true);
+    } else {
+      setIsModalOpen(false);
+    }
+    // Cleanup function to ensure modal state is reset when component unmounts
+    return () => setIsModalOpen(false);
+  }, [isFormModalOpen, isDeleteModalOpen, setIsModalOpen]);
+
   const fetchBrands = async (page = 1) => {
     setLoading(true);
     try {
@@ -132,6 +145,8 @@ export default function BrandsPage() {
   }, []);
 
   const onSubmit = async (data: BrandFormData) => {
+    console.log("Submitting form with data:", data);
+    console.log("Editing ID:", editingId);
     try {
       if (editingId) {
         await updateBrandApi(editingId, data);
@@ -170,6 +185,7 @@ export default function BrandsPage() {
   };
 
   const handleOpenEdit = (brand: Brand) => {
+    console.log("Opening edit for brand:", brand);
     setEditingId(brand.id);
     setValue("name", brand.name);
     setIsFormModalOpen(true);

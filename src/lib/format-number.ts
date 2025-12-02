@@ -1,5 +1,5 @@
 export function compactFormat(value: number) {
-  const formatter = new Intl.NumberFormat("en", {
+  const formatter = new Intl.NumberFormat("vi-VN", {
     notation: "compact",
     compactDisplay: "short",
   });
@@ -8,7 +8,7 @@ export function compactFormat(value: number) {
 }
 
 export function standardFormat(value: number) {
-  return value.toLocaleString("en-US", {
+  return value.toLocaleString("vi-VN", {
     minimumFractionDigits: 0, // Changed to 0
     maximumFractionDigits: 2,
   });

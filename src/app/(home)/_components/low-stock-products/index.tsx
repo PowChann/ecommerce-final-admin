@@ -51,7 +51,7 @@ export async function LowStockProducts() {
                     <p className="text-black dark:text-white">{product.category}</p>
                   </TableCell>
                   <TableCell className="min-w-[100px]">
-                    <p className="text-black dark:text-white">${product.price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
+                    <p className="text-black dark:text-white">{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</p>
                   </TableCell>
                   <TableCell className="min-w-[100px]">
                     <p className="text-meta-1 font-medium">{product.stock}</p>
