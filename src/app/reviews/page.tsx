@@ -1,7 +1,6 @@
 "use client";
 
 import Breadcrumb from "@/components/ui/breadcrumb";
-import InputGroup from "@/components/form-elements/InputGroup";
 import {
   Table,
   TableBody,
@@ -11,22 +10,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import api from "@/services/api";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
-import { ProductVariant } from "@/types/backend"; // Assuming ProductVariant is defined here or will be
+import Image from "next/image";
 
-// Định nghĩa lại interface Review đầy đủ dựa trên thông tin API
 interface Review {
   id: string;
-  productVariantId: string;
-  userId: string | null;
-  userName: string;
+  productId: string; // Needed for fetching image
+  productName: string;
+  productImage?: string;
+  authorName: string;
   comment: string;
+  userRating: number;
   createdAt: string;
   updatedAt: string;
-  productVariant?: ProductVariant & { product?: { id: string; name: string } }; // Thêm thông tin product
-  user?: { id: string; email: string; name?: string };
 }
 
 // Placeholder Icon
@@ -36,38 +34,62 @@ const TrashIcon = () => (
   </svg>
 );
 
-
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterProductVariantId, setFilterProductVariantId] = useState("");
-  const [filterUserId, setFilterUserId] = useState("");
+  // Cache for product images to avoid redundant API calls
+  const [imageCache, setImageCache] = useState<Record<string, string>>({});
 
-  const fetchReviews = async () => {
+  const fetchImagesForProducts = useCallback(async (productIds: string[]) => {
+    const newImages: Record<string, string> = {};
+    
+    await Promise.allSettled(productIds.map(async (id) => {
+      try {
+        const res = await api.get(`/products/${id}`);
+        const product = res.data?.data || res.data; // Handle potential data wrapping
+        if (product && product.images && product.images.length > 0) {
+          newImages[id] = product.images[0];
+        }
+      } catch (err) {
+        console.error(`Failed to fetch image for product ${id}`, err);
+      }
+    }));
+
+    setImageCache(prev => ({ ...prev, ...newImages }));
+  }, []);
+
+  const fetchReviews = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get("/reviews/admin/all", {
         params: {
           page,
           limit: 10,
-          search: searchTerm,
-          productVariantId: filterProductVariantId,
-          userId: filterUserId,
           sort: "createdAt",
           order: "desc",
         },
       });
       
       if (response.data && Array.isArray(response.data.data)) {
-         setReviews(response.data.data);
+         const fetchedReviews: Review[] = response.data.data;
+         setReviews(fetchedReviews);
          setTotalPages(response.data.pagination?.totalPages || 1);
+
+         // Extract product IDs that need images and aren't in cache
+         const productIdsToFetch = Array.from(new Set(fetchedReviews
+            .map(r => r.productId)
+            .filter(id => id && !imageCache[id])
+         ));
+
+         if (productIdsToFetch.length > 0) {
+           fetchImagesForProducts(productIdsToFetch);
+         }
+
       } else {
          setReviews([]);
          setTotalPages(1);
-         toast.error("Invalid API response format for reviews.");
       }
     } catch (error: any) {
       console.error("Failed to fetch reviews", error);
@@ -77,11 +99,11 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, imageCache, fetchImagesForProducts]); // Add imageCache as dependency to useCallback.
 
   useEffect(() => {
     fetchReviews();
-  }, [page, searchTerm, filterProductVariantId, filterUserId]);
+  }, [page, fetchReviews]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this review?")) return;
@@ -100,52 +122,64 @@ export default function ReviewsPage() {
       <Breadcrumb pageName="Reviews" />
 
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:justify-between">
-          <InputGroup
-            label="Search Comment"
-            type="text"
-            placeholder="Search by comment"
-            value={searchTerm}
-            handleChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-1/3"
-          />
-          {/* Add more filter inputs here (e.g., for productVariantId, userId) */}
-        </div>
-
         <div className="max-w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="border-none bg-[#F7F9FC] dark:bg-dark-2 [&>th]:py-4 [&>th]:text-base [&>th]:text-dark [&>th]:dark:text-white">
-                <TableHead>Product Variant</TableHead>
-                <TableHead>Customer</TableHead>
+                <TableHead>Image</TableHead>
+                <TableHead>Product</TableHead>
+                <TableHead>Author</TableHead>
+                <TableHead>Rating</TableHead>
                 <TableHead>Comment</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading && reviews.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="text-center py-10">Loading...</TableCell>
+                   <TableCell colSpan={7} className="text-center py-10">Loading...</TableCell>
                 </TableRow>
               ) : reviews.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="text-center py-10">No Reviews Found</TableCell>
+                   <TableCell colSpan={7} className="text-center py-10">No Reviews Found</TableCell>
                 </TableRow>
               ) : (
-                reviews.map((review) => (
+                reviews.map((review) => {
+                  const imgUrl = review.productImage || imageCache[review.productId];
+                  return (
                   <TableRow key={review.id} className="border-[#eee] dark:border-dark-3">
+                    <TableCell>
+                      <div className="h-12 w-12 relative rounded overflow-hidden bg-gray-100">
+                         {imgUrl ? (
+                            <Image 
+                              src={imgUrl} 
+                              alt={review.productName} 
+                              fill 
+                              className="object-cover" 
+                            />
+                         ) : (
+                            <span className="flex h-full w-full items-center justify-center text-xs text-gray-500">No img</span>
+                         )}
+                      </div>
+                    </TableCell>
                     <TableCell className="min-w-[150px]">
-                      {review.productVariant?.product?.name || review.productVariant?.sku || review.productVariantId.slice(0,8)}
+                      {review.productName || "Unknown Product"}
                     </TableCell>
                     <TableCell>
-                      {review.user?.name || review.user?.email || review.userName || review.userId?.slice(0,8) || "Anonymous"}
+                      {review.authorName || "Anonymous"}
                     </TableCell>
-                    <TableCell className="min-w-[200px]">{review.comment}</TableCell>
-                    <TableCell>{dayjs(review.createdAt).format("MMM DD, YYYY HH:mm")}</TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1">
+                        {review.userRating} <span className="text-yellow-500">★</span>
+                      </span>
+                    </TableCell>
+                    <TableCell className="min-w-[200px] max-w-[300px] truncate" title={review.comment}>
+                      {review.comment}
+                    </TableCell>
+                    <TableCell>{dayjs(review.createdAt).format("MMM DD, YYYY")}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-x-3.5">
-                        {/* No Edit/Approve/Reject actions as per API */}
                         <button
                           onClick={() => handleDelete(review.id)}
                           className="hover:text-red-500"
@@ -156,7 +190,8 @@ export default function ReviewsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
